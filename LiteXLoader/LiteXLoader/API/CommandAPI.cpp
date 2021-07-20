@@ -210,7 +210,8 @@ bool ProcessDebugEngine(const string& cmd)
         {
             if (cmd == "stop")
             {
-                WARN("请先退出Debug实时调试模式再使用stop！");
+                WARN("Please exit real-time debug mode before 'stop'.");
+                //WARN("请先退出Debug实时调试模式再使用stop！");
             }
             else
             {
