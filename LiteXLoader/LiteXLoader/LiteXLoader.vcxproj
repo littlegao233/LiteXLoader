@@ -55,6 +55,7 @@
     <ClCompile Include="API\RemoteCall.cpp" />
     <ClCompile Include="API\ScriptAPI.cpp" />
     <ClCompile Include="API\ServerAPI.cpp" />
+    <ClCompile Include="API\SystemAPI.cpp" />
     <ClCompile Include="BindAPIs.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Kernel\Base.cpp" />
@@ -72,6 +73,7 @@
     <ClCompile Include="Kernel\Server.cpp" />
     <ClCompile Include="Kernel\SymbolHelper.cpp" />
     <ClCompile Include="Kernel\System.cpp" />
+    <ClCompile Include="Kernel\UnlockCmd.cpp" />
     <ClCompile Include="LiteXLoader.cpp" />
     <ClCompile Include="Loader.cpp" />
   </ItemGroup>
@@ -98,6 +100,7 @@
     <ClInclude Include="API\ScriptAPI.h" />
     <ClInclude Include="API\ServerAPI.h" />
     <ClInclude Include="API\StaticClasses.h" />
+    <ClInclude Include="API\SystemAPI.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="Kernel\Base.h" />
     <ClInclude Include="Kernel\Block.h" />
@@ -371,6 +374,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -393,6 +397,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

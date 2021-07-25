@@ -8,18 +8,18 @@ using namespace std;
 
 DB_ROOT Raw_NewDB(const string &dir)
 {
+    if (!filesystem::exists(dir))
+        if (!filesystem::create_directories(dir))
+            return nullptr;
     if(!filesystem::is_directory(dir))
         return nullptr;
-    else
+    try
     {
-        try
-        {
-            return MakeKVDB(dir);
-        }
-        catch(...)
-        {
-            return nullptr;
-        }
+        return MakeKVDB(dir).release();
+    }
+    catch(...)
+    {
+        return nullptr;
     }
 }
 
@@ -53,7 +53,7 @@ vector<string> Raw_DBListKey(DB_ROOT &db)
 
 bool Raw_DBClose(DB_ROOT& db)
 {
-    db.reset();
+    delete db;
     return true;
 }
 
@@ -63,6 +63,8 @@ JSON_ROOT Raw_JsonOpen(const std::string& path, const std::string& defContent)
     if (!Raw_PathExists(path))
     {
         //创建新的
+        filesystem::create_directories(filesystem::path(path).remove_filename().u8string());
+
         if (defContent != "")
         {
             try
@@ -111,6 +113,8 @@ INI_ROOT Raw_IniOpen(const string &path, const std::string& defContent)
     if (!Raw_PathExists(path))
     {
         //创建新的
+        filesystem::create_directories(filesystem::path(path).remove_filename().u8string());
+
         ofstream iniFile(path);
         if (iniFile.is_open() && defContent != "")
             iniFile << defContent;
@@ -244,31 +248,31 @@ bool Raw_InitEcnonmicSystem()
         {
             libExists = true;
                 
-            dynamicSymbolsMap.Dy_GetMoney = (Dy_GetMoney_T)GetProcAddress(h, "llgetMoney");
+            dynamicSymbolsMap.Dy_GetMoney = (Dy_GetMoney_T)GetProcAddress(h, "LLMoneyGet");
             if(!dynamicSymbolsMap.Dy_GetMoney)
                 WARN("Fail to load API money.getMoney!");
 
-            dynamicSymbolsMap.Dy_SetMoney = (Dy_SetMoney_T)GetProcAddress(h, "llsetMoney");
+            dynamicSymbolsMap.Dy_SetMoney = (Dy_SetMoney_T)GetProcAddress(h, "LLMoneySet");
             if (!dynamicSymbolsMap.Dy_SetMoney)
                 WARN("Fail to load API money.setMoney!");
 
-            dynamicSymbolsMap.Dy_AddMoney = (Dy_AddMoney_T)GetProcAddress(h, "lladdMoney");
+            dynamicSymbolsMap.Dy_AddMoney = (Dy_AddMoney_T)GetProcAddress(h, "LLMoneyAdd");
             if (!dynamicSymbolsMap.Dy_AddMoney)
                 WARN("Fail to load API money.addMoney!");
 
-            dynamicSymbolsMap.Dy_ReduceMoney = (Dy_ReduceMoney_T)GetProcAddress(h, "llreduceMoney");
+            dynamicSymbolsMap.Dy_ReduceMoney = (Dy_ReduceMoney_T)GetProcAddress(h, "LLMoneyReduce");
             if (!dynamicSymbolsMap.Dy_ReduceMoney)
                 WARN("Fail to load API money.reduceMoney!");
 
-            dynamicSymbolsMap.Dy_TransMoney = (Dy_TransMoney_T)GetProcAddress(h, "llcreateTrans");
+            dynamicSymbolsMap.Dy_TransMoney = (Dy_TransMoney_T)GetProcAddress(h, "LLMoneyTrans");
             if (!dynamicSymbolsMap.Dy_TransMoney)
                 WARN("Fail to load API money.transMoney!");
 
-            dynamicSymbolsMap.Dy_GetTransHist = (Dy_GetTransHist_T)GetProcAddress(h, "llgetTransHist");
+            dynamicSymbolsMap.Dy_GetTransHist = (Dy_GetTransHist_T)GetProcAddress(h, "LLMoneyGetHist");
             if (!dynamicSymbolsMap.Dy_GetTransHist)
                 WARN("Fail to load API money.getTransHist!");
 
-            dynamicSymbolsMap.Dy_ClearHist = (Dy_ClearHist_T)GetProcAddress(h, "llpurgeHist");
+            dynamicSymbolsMap.Dy_ClearHist = (Dy_ClearHist_T)GetProcAddress(h, "LLMoneyClearHist");
             if (!dynamicSymbolsMap.Dy_ClearHist)
                 WARN("Fail to load API money.clearHist!");
         }

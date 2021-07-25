@@ -14,6 +14,7 @@
 #include "NetworkAPI.h"
 #include "GuiAPI.h"
 #include "LxlAPI.h"
+#include "SystemAPI.h"
 #include "RemoteCall.h"
 using namespace script;
 
@@ -80,6 +81,7 @@ public:
     static Local<Value> randomGuid(const Arguments& args) { return RandomGuid(args); }
 
     static Local<Value> cmd(const Arguments& args) { return SystemCmd(args); }
+    static Local<Value> newProcess(const Arguments& args) { return SystemNewProcess(args); }
 };
 
 static ClassDefine<void> SystemClassBuilder =
@@ -88,6 +90,7 @@ static ClassDefine<void> SystemClassBuilder =
         .function("getTimeObj", &SystemClass::getTimeObj)
         .function("randomGuid", &SystemClass::randomGuid)
         .function("cmd", &SystemClass::cmd)
+        .function("newProcess", &SystemClass::newProcess)
         .build();
 
 
@@ -114,6 +117,7 @@ static ClassDefine<void> FileClassBuilder =
         .function("writeLine", &FileClass::writeLine)
 
         .function("createDir", &FileClass::createDir)
+        .function("mkdir", &FileClass::createDir)
         .function("copy", &FileClass::copy)
         .function("move", &FileClass::move)
         .function("rename", &FileClass::rename)
@@ -146,6 +150,7 @@ static ClassDefine<void> LoggerClassBuilder =
         .function("debug", &LoggerClass::debug)
         .function("info", &LoggerClass::info)
         .function("warn", &LoggerClass::warn)
+        .function("warning", & LoggerClass::warn)
         .function("error", &LoggerClass::error)
         .function("fatal", &LoggerClass::fatal)
 
@@ -223,6 +228,7 @@ public:
     static Local<Value> importFunc(const Arguments& args) { return LxlImport(args); }
     static Local<Value> exportFunc(const Arguments& args) { return LxlExport(args); }
     static Local<Value> require(const Arguments& args) { return LxlRequire(args); }
+    static Local<Value> eval(const Arguments& args) { return LxlEval(args); }
 };
 
 static ClassDefine<void> LxlClassBuilder =
@@ -232,4 +238,5 @@ static ClassDefine<void> LxlClassBuilder =
         .function("import", &LxlClass::importFunc)
         .function("export", &LxlClass::exportFunc)
         .function("require", &LxlClass::require)
+        .function("eval", &LxlClass::eval)
         .build();

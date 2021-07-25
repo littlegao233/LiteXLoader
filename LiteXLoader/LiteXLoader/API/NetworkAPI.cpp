@@ -21,7 +21,16 @@ Local<Value> HttpGet(const Arguments& args)
             (int status, string body)
         {
             EngineScope scope(engine);
-            callback.get().call({}, Number::newNumber(status), String::newString(body));
+            try
+            {
+                callback.get().call({}, Number::newNumber(status), String::newString(body));
+            }
+            catch (const Exception& e)
+            {
+                ERROR("HttpGet Callback Failed!");
+                ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName);
+                ERRPRINT(e);
+            }
         }));
     }
     CATCH("Fail in HttpGet")
@@ -44,7 +53,16 @@ Local<Value> HttpPost(const Arguments& args)
             (int status, string data)
         {
             EngineScope scope(engine);
-            callback.get().call({}, Number::newNumber(status), String::newString(data));
+            try
+            {
+                callback.get().call({}, Number::newNumber(status), String::newString(data));
+            }
+            catch (const Exception& e)
+            {
+                ERROR("HttpPost Callback Failed!");
+                ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName);
+                ERRPRINT(e);
+            }
         }));
     }
     CATCH("Fail in HttpPost")

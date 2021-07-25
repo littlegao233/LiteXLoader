@@ -13,7 +13,7 @@ using namespace std;
 //////////////////// Class Definition ////////////////////
 
 ClassDefine<DbClass> DbClassBuilder =
-    defineClass<DbClass>("Db")
+    defineClass<DbClass>("LXL_Db")
         .constructor(nullptr)
         .instanceFunction("get", &DbClass::get)
         .instanceFunction("set", &DbClass::set)
@@ -22,7 +22,7 @@ ClassDefine<DbClass> DbClassBuilder =
         .build();
 
 ClassDefine<ConfJsonClass> ConfJsonClassBuilder =
-    defineClass<ConfJsonClass>("ConfJson")
+    defineClass<ConfJsonClass>("LXL_ConfJson")
         .constructor(nullptr)
         .instanceFunction("get", &ConfJsonClass::get)
         .instanceFunction("set", &ConfJsonClass::set)
@@ -35,7 +35,7 @@ ClassDefine<ConfJsonClass> ConfJsonClassBuilder =
         .build();
 
 ClassDefine<ConfIniClass> ConfIniClassBuilder =
-    defineClass<ConfIniClass>("ConfIni")
+    defineClass<ConfIniClass>("LXL_ConfIni")
         .constructor(nullptr)
         .instanceFunction("set", &ConfIniClass::set)
         .instanceFunction("getStr", &ConfIniClass::getStr)
@@ -73,13 +73,25 @@ DbClass::DbClass(const string &dir)
     kvdb = Raw_NewDB(dir);
 }
 
+DbClass::~DbClass()
+{
+    if (isValid())
+    {
+        Raw_DBClose(kvdb);
+        kvdb = nullptr;
+    }
+}
+
 Local<Value> DbClass::get(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,1)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         string res;
         if(!Raw_DBGet(kvdb,args[0].asString().toString(),res))
             return Local<Value>();
@@ -91,11 +103,14 @@ Local<Value> DbClass::get(const Arguments& args)
 
 Local<Value> DbClass::set(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,2)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Boolean::newBoolean(Raw_DBSet(kvdb,args[0].asString().toString(),ValueToJson(args[1])));
     }
     CATCH("Fail in DbSet!")
@@ -103,11 +118,14 @@ Local<Value> DbClass::set(const Arguments& args)
 
 Local<Value> DbClass::del(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,1)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Boolean::newBoolean(Raw_DBDel(kvdb,args[0].asString().toString()));
     }
     CATCH("Fail in DbDel!")
@@ -117,7 +135,12 @@ Local<Value> DbClass::close(const Arguments& args)
 {
     try
     {
-        return Boolean::newBoolean(Raw_DBClose(kvdb));
+        if (isValid())
+        {
+            Raw_DBClose(kvdb);
+            kvdb = nullptr;
+        }
+        return Boolean::newBoolean(true);
     }
     CATCH("Fail in DbClose!")
 }
@@ -126,6 +149,9 @@ Local<Value> DbClass::listKey(const Arguments& args)
 {
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         auto list = Raw_DBListKey(kvdb);
         Local<Array> arr = Array::newArray();
         for (auto& key : list)
@@ -168,11 +194,11 @@ Local<Value> ConfBaseClass::read(const Arguments& args)
 
 Local<Value> ConfBaseClass::write(const Arguments& args)
 {
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+
     try
     {
-        CHECK_ARGS_COUNT(args, 1)
-        CHECK_ARG_TYPE(args[0], ValueKind::kString)
-
         return Boolean::newBoolean(Raw_FileWriteTo(confPath, args[0].toStr()));
     }
     CATCH("Fail in confWrite!")
@@ -193,10 +219,15 @@ ConfJsonClass::ConfJsonClass(const string& path, const string& defContent)
     jsonConf = Raw_JsonOpen(path, defContent);
 }
 
+ConfJsonClass::~ConfJsonClass()
+{
+    flush();
+}
+
 Local<Value> ConfJsonClass::get(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -211,8 +242,8 @@ Local<Value> ConfJsonClass::get(const Arguments& args)
 
 Local<Value> ConfJsonClass::set(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -223,13 +254,13 @@ Local<Value> ConfJsonClass::set(const Arguments& args)
     {
         return args.size() >= 2 ? args[1] : Local<Value>();
     }
-    CATCH("Fail in confJsonSet!")
+    CATCH("Fail in confJsonSet!");
 }
 
 Local<Value> ConfJsonClass::del(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -307,14 +338,22 @@ ConfIniClass::ConfIniClass(const string& path, const string& defContent)
     iniConf = Raw_IniOpen(path, defContent);
 }
 
+ConfIniClass::~ConfIniClass()
+{
+    Raw_IniClose(iniConf);
+}
+
 Local<Value> ConfIniClass::set(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 3)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 3);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         switch (args[2].getKind())
         {
         case ValueKind::kString:
@@ -338,14 +377,17 @@ Local<Value> ConfIniClass::set(const Arguments& args)
 
 Local<Value> ConfIniClass::getStr(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
     if (args.size() >= 3)
         CHECK_ARG_TYPE(args[2], ValueKind::kString)
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return String::newString(Raw_IniGetString(iniConf, args[0].toStr(), args[1].toStr(), 
             args.size() >= 3 ? args[2].toStr() : ""));
     }
@@ -354,69 +396,84 @@ Local<Value> ConfIniClass::getStr(const Arguments& args)
 
 Local<Value> ConfIniClass::getInt(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
     if (args.size() >= 3)
         CHECK_ARG_TYPE(args[2], ValueKind::kNumber)
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Number::newNumber(Raw_IniGetInt(iniConf, args[0].toStr(), args[1].toStr(), 
             args.size() >= 3 ? args[2].asNumber().toInt32() : 0));
     }
-    CATCH("Fail in ConfIniGetInt!")
+    CATCH("Fail in ConfIniGetInt!");
 }
 
 Local<Value> ConfIniClass::getFloat(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
     if (args.size() >= 3)
-        CHECK_ARG_TYPE(args[2], ValueKind::kNumber)
+        CHECK_ARG_TYPE(args[2], ValueKind::kNumber);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Number::newNumber(Raw_IniGetFloat(iniConf, args[0].toStr(), args[1].toStr(), 
             args.size() >= 3 ? (float)args[2].asNumber().toDouble() : 0.0));
     }
-    CATCH("Fail in ConfIniGetFloat!")
+    CATCH("Fail in ConfIniGetFloat!");
 }
 
 Local<Value> ConfIniClass::getBool(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
     if (args.size() >= 3)
-        CHECK_ARG_TYPE(args[2], ValueKind::kBoolean)
+        CHECK_ARG_TYPE(args[2], ValueKind::kBoolean);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Boolean::newBoolean(Raw_IniGetBool(iniConf, args[0].toStr(), args[1].toStr(), 
             args.size() >= 3 ? args[2].asBoolean().value() : false));
     }
-    CATCH("Fail in ConfIniGetBool")
+    CATCH("Fail in ConfIniGetBool");
 }
 
 Local<Value> ConfIniClass::del(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
 
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         return Boolean::newBoolean(Raw_IniDeleteKey(iniConf, args[0].toStr(), args[1].toStr()));
     }
-    CATCH("Fail in confIniDelete!")
+    CATCH("Fail in confIniDelete!");
 }
 
 Local<Value> ConfIniClass::reload(const Arguments& args)
 {
     try
     {
+        if (!isValid())
+            return Local<Value>();
+
         Raw_IniClose(iniConf);
         iniConf = Raw_IniOpen(confPath);
         return Boolean::newBoolean(true);
@@ -428,7 +485,11 @@ Local<Value> ConfIniClass::close(const Arguments& args)
 {
     try
     {
-        Raw_IniClose(iniConf);
+        if (isValid())
+        {
+            Raw_IniClose(iniConf);
+            iniConf = nullptr;
+        }
         return Boolean::newBoolean(true);
     }
     CATCH("Fail in confClose!")
@@ -439,12 +500,12 @@ Local<Value> ConfIniClass::close(const Arguments& args)
 
 Local<Value> OpenConfig(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,1)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
-    if(args.size() >= 2)
-        CHECK_ARG_TYPE(args[1],ValueKind::kString)
-    if(args.size() >= 3)
-        CHECK_ARG_TYPE(args[2],ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    if (args.size() >= 2)
+        CHECK_ARG_TYPE(args[1], ValueKind::kString);
+    if (args.size() >= 3)
+        CHECK_ARG_TYPE(args[2], ValueKind::kString);
 
     try{
         string path = args[0].toStr();
@@ -452,10 +513,6 @@ Local<Value> OpenConfig(const Arguments& args)
 
         if(path.empty())
             return Boolean::newBoolean(false);  
-
-        //自动创建路径
-        filesystem::path dir(path);
-        filesystem::create_directories(dir.remove_filename());
 
         if(args.size() >= 2)
         {
@@ -479,22 +536,22 @@ Local<Value> OpenConfig(const Arguments& args)
                 return ConfJsonClass::newConf(path);
         }
     }
-    CATCH("Fail in OpenConfig!")
+    CATCH("Fail in OpenConfig!");
 }
 
 Local<Value> OpenDB(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     return DbClass::newDb(args[0].toStr());
 }
 
 Local<Value> MoneySet(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1],ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
 
     try
     {
@@ -505,8 +562,8 @@ Local<Value> MoneySet(const Arguments& args)
 
 Local<Value> MoneyGet(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -517,9 +574,9 @@ Local<Value> MoneyGet(const Arguments& args)
 
 Local<Value> MoneyAdd(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
 
     try
     {
@@ -530,9 +587,9 @@ Local<Value> MoneyAdd(const Arguments& args)
 
 Local<Value> MoneyReduce(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
 
     try
     {
@@ -543,10 +600,10 @@ Local<Value> MoneyReduce(const Arguments& args)
 
 Local<Value> MoneyTrans(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 3)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kString)
-    CHECK_ARG_TYPE(args[2], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 3);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kString);
+    CHECK_ARG_TYPE(args[2], ValueKind::kNumber);
 
     try
     {
@@ -561,9 +618,9 @@ Local<Value> MoneyTrans(const Arguments& args)
 
 Local<Value> MoneyGetHintory(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 2)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
-    CHECK_ARG_TYPE(args[1], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
 
     try
     {
@@ -574,8 +631,8 @@ Local<Value> MoneyGetHintory(const Arguments& args)
 
 Local<Value> MoneyClearHistory(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kNumber);
 
     try
     {
@@ -586,8 +643,8 @@ Local<Value> MoneyClearHistory(const Arguments& args)
 
 Local<Value> Xuid2Name(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -598,8 +655,8 @@ Local<Value> Xuid2Name(const Arguments& args)
 
 Local<Value> Name2Xuid(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {
@@ -610,9 +667,9 @@ Local<Value> Name2Xuid(const Arguments& args)
 
 Local<Value> ToJson(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
+    CHECK_ARGS_COUNT(args, 1);
     if (args.size() >= 2)
-    CHECK_ARG_TYPE(args[1], ValueKind::kNumber)
+        CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
 
     try
     {
@@ -638,8 +695,8 @@ Local<Value> ToJson(const Arguments& args)
 
 Local<Value> ParseJson(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
 
     try
     {

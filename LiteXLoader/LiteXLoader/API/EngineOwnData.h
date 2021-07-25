@@ -1,6 +1,7 @@
+#pragma once
 #include <Kernel/ThirdParty.h>
 #include <Kernel/Db.h>
-
+#include <ScriptX/ScriptX.h>
 #include <fstream>
 #include <string>
 #include <fstream>
@@ -8,15 +9,10 @@
 #include <unordered_map>
 #include <memory>
 
-static struct EngineOwnData_MapCmp
+struct FormCallbackData
 {
-    bool operator() (std::string const &a, std::string const &b) const
-    {
-        if(a.size()!=b.size())
-            return a.size()>b.size();
-        else
-            return a>b;
-    }
+    script::ScriptEngine* engine;
+    script::Global<script::Function> func;
 };
 
 enum GlobalConfType { json, ini };
@@ -24,15 +20,12 @@ class Player;
 
 struct EngineOwnData
 {
-    //BaseInfo
+    //基础信息
     std::string pluginName = "";
     std::string pluginPath = "";
 
-    //BaseAPI
-    std::map<std::string, Global<Function> ,EngineOwnData_MapCmp> playerCmdCallbacks;
-
-    //ServerAPI
-    std::map<std::string, Global<Function> ,EngineOwnData_MapCmp> consoleCmdCallbacks;
+    //表单回调
+    std::map<unsigned, FormCallbackData> formCallbacks;
 
     //LoggerAPI
     bool toConsole = true;
@@ -44,7 +37,7 @@ struct EngineOwnData
     int fileLogLevel = 4;
     int playerLogLevel = 4;
 
-    //PlayerAPI
+    //玩家绑定数据
     std::unordered_map<std::string,Global<Value>> playerDataDB;
 };
 

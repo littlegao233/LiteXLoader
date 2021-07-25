@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "Packet.h"
 #include "SymbolHelper.h"
+#include "ThirdParty.h"
 #include "Global.h"
 using namespace std;
 
@@ -160,12 +161,7 @@ bool Raw_TransServer(Player* player, const std::string& server, short port)
 
 bool Raw_CrashPlayer(Player* player)
 {
-    void* pkt = Raw_CreatePacket(0x3A);
-    dAccess<int, 14>(pkt) = 0;
-    dAccess<int, 15>(pkt) = 0;
-    dAccess<bool, 48>(pkt) = 1;
-
-    return Raw_SendPacket(player,pkt);
+    return Raw_SendCrashClientPacket(player);
 }
 
 int Raw_GetScore(Player* player, const std::string &key)
@@ -250,7 +246,14 @@ bool Raw_RemoveBossBar(Player *player)
 
 vector<Player*> Raw_GetOnlinePlayers()
 {
-    return isServerStarted ? liteloader::getAllPlayers() : vector<Player*>();
+    try
+    {
+        return isServerStarted ? liteloader::getAllPlayers() : vector<Player*>();
+    }
+    catch (const seh_exception& e)
+    {
+        return vector<Player*>();
+    }
 }
 
 bool Raw_IsPlayerValid(Player *player)

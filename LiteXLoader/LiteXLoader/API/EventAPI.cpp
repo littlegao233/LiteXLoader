@@ -25,6 +25,7 @@
 #include "ItemAPI.h"
 #include "EntityAPI.h"
 #include "PlayerAPI.h"
+#include <Loader.h>
 #include <Configs.h>
 using namespace std;
 using namespace script;
@@ -33,7 +34,7 @@ using namespace script;
 
 enum class EVENT_TYPES : int
 {
-    onJoin=0, onPlayerInitialized, onLeft, onPlayerCmd, onChat,
+    onPreJoin=0, onJoin, onLeft, onPlayerCmd, onChat,
     onRespawn, onChangeDim, onJump, onSneak, onAttack, onEat, onMove, onSetArmor,
     onUseItem, onTakeItem, onDropItem, onUseItemOn,
     onDestroyingBlock, onDestroyBlock, onPlaceBlock,
@@ -45,8 +46,8 @@ enum class EVENT_TYPES : int
     EVENT_COUNT
 };
 static const std::unordered_map<string, EVENT_TYPES> EventsMap{
+    {"onPreJoin",EVENT_TYPES::onPreJoin},
     {"onJoin",EVENT_TYPES::onJoin},
-    {"onPlayerInitialized",EVENT_TYPES::onPlayerInitialized},
     {"onLeft",EVENT_TYPES::onLeft},
     {"onPlayerCmd",EVENT_TYPES::onPlayerCmd},
     {"onChat",EVENT_TYPES::onChat},
@@ -105,6 +106,7 @@ static std::vector<ListenerListType> listenerList[int(EVENT_TYPES::EVENT_COUNT)]
         catch(const Exception& e) \
         { \
             ERROR("Event Callback Failed!"); \
+            ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName); \
             ERRPRINT(e); \
         } \
     }
@@ -123,6 +125,7 @@ static std::vector<ListenerListType> listenerList[int(EVENT_TYPES::EVENT_COUNT)]
         catch(const Exception& e) \
         { \
             ERROR("Event Callback Failed!"); \
+            ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName); \
             ERRPRINT(e); \
         } \
     }\
@@ -142,19 +145,23 @@ static std::vector<ListenerListType> listenerList[int(EVENT_TYPES::EVENT_COUNT)]
         catch(const Exception& e) \
         { \
             ERROR("Event Callback Failed!"); \
+            ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName); \
             ERRPRINT(e); \
         } \
     }\
     if(!passToBDS) { return RETURN_VALUE; }
 
 
+#define IF_LISTENED(EVENT) if(!listenerList[int(EVENT)].empty())
+
+
 //////////////////// APIs ////////////////////
 
 Local<Value> Listen(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,2)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
-    CHECK_ARG_TYPE(args[1],ValueKind::kFunction)
+    CHECK_ARGS_COUNT(args, 2);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    CHECK_ARG_TYPE(args[1], ValueKind::kFunction);
 
     try{
         return Boolean::newBoolean(LxlAddEventListener(EngineScope::currentEngine(),args[0].toStr(),args[1].asFunction()));
@@ -195,13 +202,42 @@ bool LxlRemoveAllEventListeners(ScriptEngine* engine)
     return true;
 }
 
+bool LxlRecallOnServerStarted(ScriptEngine* engine)
+{
+    std::vector<ListenerListType>& nowList = listenerList[int(EVENT_TYPES::onServerStarted)];
+    for (int i = 0; i < nowList.size(); ++i)
+    {
+        if (nowList[i].engine == engine)
+        {
+            EngineScope enter(nowList[i].engine);
+            try {
+                nowList[i].func.get().call();
+            }
+            catch (const Exception& e)
+            {
+                ERROR("Event Callback Failed!");
+                ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName);
+                ERRPRINT(e);
+                return false;
+            }
+            break;
+        }
+    }
+    return true;
+}
 
 //////////////////// Hook ////////////////////
 
-#define IF_LISTENED(EVENT) if(!listenerList[int(EVENT)].empty())
-
 void InitEventListeners()
 {
+// ===== onPreJoin =====
+    Event::addEventListener([](JoinEV ev)
+    {
+        IF_LISTENED(EVENT_TYPES::onPreJoin)
+        {
+            CallEvent(EVENT_TYPES::onPreJoin, PlayerClass::newPlayer(ev.Player));
+        }
+    });
 
 // ===== onLeft =====
     Event::addEventListener([](LeftEV ev)
@@ -237,21 +273,6 @@ void InitEventListeners()
         IF_LISTENED(EVENT_TYPES::onCmdBlockExecute)
         {
             CallEventEx(EVENT_TYPES::onCmdBlockExecute, ev.cmd, IntPos::newPos(ev.bpos.x, ev.bpos.y, ev.bpos.z));
-        }
-        return true;
-    });
-
-// ===== onMobHurt =====
-    Event::addEventListener([](MobHurtedEV ev)
-    {
-        IF_LISTENED(EVENT_TYPES::onMobHurt)
-        {
-            auto level = offPlayer::getLevel(ev.Mob);
-            auto source = SymCall("?fetchEntity@Level@@UEBAPEAVActor@@UActorUniqueID@@_N@Z"
-                , Actor*, Level*, ActorDamageSource*, bool)(level, ev.ActorDamageSource, 0);
-
-            CallEventEx(EVENT_TYPES::onMobHurt, EntityClass::newEntity(ev.Mob), EntityClass::newEntity(source),
-                Number::newNumber(ev.Damage));
         }
         return true;
     });
@@ -296,23 +317,32 @@ void InitEventListeners()
     });
 }
 
-// ===== onJoin =====
-THook(bool, "?_loadNewPlayer@ServerNetworkHandler@@AEAA_NAEAVServerPlayer@@_N@Z",
-    ServerNetworkHandler* _this, ServerPlayer* pl, bool a3)
+// 植入tick
+THook(void, "?tick@ServerLevel@@UEAAXXZ",
+    void* _this)
 {
-    IF_LISTENED(EVENT_TYPES::onJoin)
+    try
     {
-        CallEvent(EVENT_TYPES::onJoin, PlayerClass::newPlayer(pl));
+        for (auto engine : lxlModules)
+        {
+            EngineScope enter(engine);
+            engine->messageQueue()->loopQueue(utils::MessageQueue::LoopType::kLoopOnce);
+        }
     }
-    return original(_this, pl, a3);
+    catch (...)
+    {
+        ;
+    }
+    return original(_this);
 }
-// ===== onPlayerInitialized =====
+
+// ===== onJoin =====
 THook(bool, "?setLocalPlayerAsInitialized@ServerPlayer@@QEAAXXZ",
     ServerPlayer* _this)
 {
-    IF_LISTENED(EVENT_TYPES::onPlayerInitialized)
+    IF_LISTENED(EVENT_TYPES::onJoin)
     {
-        CallEvent(EVENT_TYPES::onPlayerInitialized, PlayerClass::newPlayer(_this));
+        CallEvent(EVENT_TYPES::onJoin, PlayerClass::newPlayer(_this));
     }
     return original(_this);
 }
@@ -559,13 +589,29 @@ THook(void, "?_onItemChanged@LevelContainerModel@@MEAAXHAEBVItemStack@@0@Z",
     return original(_this, slotNumber, oldItem, newItem);
 }
 
+// ===== onMobHurt =====
+THook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@H_N1@Z",
+    Mob* ac, ActorDamageSource* src, int damage, bool unk1_1, bool unk2_0)
+{
+    IF_LISTENED(EVENT_TYPES::onMobHurt)
+    {
+        auto level = offPlayer::getLevel(ac);
+        auto source = SymCall("?fetchEntity@Level@@UEBAPEAVActor@@UActorUniqueID@@_N@Z"
+            , Actor*, Level*, ActorDamageSource*, bool)(level, src, 0);
+
+        CallEventEx(EVENT_TYPES::onMobHurt, EntityClass::newEntity(ac), EntityClass::newEntity(source),
+            Number::newNumber(damage));
+    }
+    return original(ac, src, damage, unk1_1, unk2_0);
+}
+
 // ===== onExplode =====
 THook(bool, "?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z",
     Level* _this, BlockSource* bs, Actor* actor, Vec3 pos, float a5, bool a6, bool a7, float a8, bool a9)
 {
     IF_LISTENED(EVENT_TYPES::onExplode)
     {
-        CallEventEx(EVENT_TYPES::onExplode, EntityClass::newEntity(actor), FloatPos::newPos(pos.x, pos.y, pos.z));
+        CallEventEx(EVENT_TYPES::onExplode, EntityClass::newEntity(actor), FloatPos::newPos(pos.x, pos.y, pos.z, Raw_GetEntityDimId(actor)));
     }
     return original(_this, bs, actor, pos, a5, a6, a7, a8, a9);
 }
@@ -689,29 +735,48 @@ THook(bool, "?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@V?$shared_ptr@V
         if (player)
         {
             // Player Command
-            bool callbackRes = CallPlayerCmdCallback(player, cmd);
-            IF_LISTENED(EVENT_TYPES::onPlayerCmd)
+            vector<string> paras;
+            string prefix = LxlFindCmdReg(true, cmd, paras);
+
+            if (!prefix.empty())
             {
-                CallEvent(EVENT_TYPES::onPlayerCmd, PlayerClass::newPlayer(player), cmd);
+                //found
+                int perm = engineLocalData->playerCmdCallbacks[prefix].perm;
+
+                if (Raw_GetPlayerPermLevel(player) >= perm)
+                {
+                    bool callbackRes = CallPlayerCmdCallback(player, prefix, paras);
+                    IF_LISTENED(EVENT_TYPES::onPlayerCmd)
+                    {
+                        CallEvent(EVENT_TYPES::onPlayerCmd, PlayerClass::newPlayer(player), cmd);
+                    }
+                    if (!callbackRes)
+                        return false;
+                }
             }
-            if (!callbackRes)
-                return false;
         }
         else
         {
-            // Server Command
+            // PreProcess
             if (!ProcessDebugEngine(cmd))
                 return false;
             ProcessStopServer(cmd);
             ProcessHotManagement(cmd);
 
-            bool callbackRes = CallServerCmdCallback(cmd);
-            IF_LISTENED(EVENT_TYPES::onConsoleCmd)
+            //CallEvents
+            vector<string> paras;
+            string prefix = LxlFindCmdReg(false, cmd, paras);
+
+            if (!prefix.empty())
             {
-                CallEventEx(EVENT_TYPES::onConsoleCmd, cmd);
+                bool callbackRes = CallServerCmdCallback(prefix,paras);
+                IF_LISTENED(EVENT_TYPES::onConsoleCmd)
+                {
+                    CallEventEx(EVENT_TYPES::onConsoleCmd, cmd);
+                }
+                if (!callbackRes)
+                    return false;
             }
-            if (!callbackRes)
-                return false;
         }
     }
     return original(_this, a2, x, a4);
@@ -719,7 +784,7 @@ THook(bool, "?executeCommand@MinecraftCommands@@QEBA?AUMCRESULT@@V?$shared_ptr@V
 
 // ===== onFormSelected =====
 THook(void, "?handle@?$PacketHandlerDispatcherInstance@VModalFormResponsePacket@@$0A@@@UEBAXAEBVNetworkIdentifier@@AEAVNetEventCallback@@AEAV?$shared_ptr@VPacket@@@std@@@Z",
-	void* _this, NetworkIdentifier* id, ServerNetworkHandler* handler, void* pPacket)
+    void* _this, NetworkIdentifier* id, ServerNetworkHandler* handler, void* pPacket)
 {
     //IF_LISTENED(EVENT_TYPES::onFormSelected)
     Packet* packet = *(Packet**)pPacket;
@@ -744,9 +809,12 @@ THook(void, "?handle@?$PacketHandlerDispatcherInstance@VModalFormResponsePacket@
 THook(ostream&, "??$_Insert_string@DU?$char_traits@D@std@@_K@std@@YAAEAV?$basic_ostream@DU?$char_traits@D@std@@@0@AEAV10@QEBD_K@Z",
     ostream& _this, const char* str, unsigned size)
 {
-    IF_LISTENED(EVENT_TYPES::onConsoleOutput)
+    if (&_this == &cout)
     {
-        CallEventRtn(EVENT_TYPES::onConsoleOutput, _this, String::newString(string(str)));
+        IF_LISTENED(EVENT_TYPES::onConsoleOutput)
+        {
+            CallEventRtn(EVENT_TYPES::onConsoleOutput, _this, String::newString(string(str)));
+        }
     }
     return original(_this, str, size);
 }

@@ -17,6 +17,7 @@
 #include <Loader.h>
 #include "LoaderHelper.h"
 #include "RemoteCall.h"
+#include "CommandAPI.h"
 using namespace script;
 using namespace std;
 
@@ -51,7 +52,7 @@ ScriptEngine* NewEngine()
 }
 
 //加载插件
-bool LxlLoadPlugin(const std::string& filePath)
+bool LxlLoadPlugin(const std::string& filePath, bool isHotLoad)
 {
     if (filePath == LXL_DEBUG_ENGINE_NAME)
         return true;
@@ -102,8 +103,11 @@ bool LxlLoadPlugin(const std::string& filePath)
             ERROR("Fail in Loading Script Plugin!\n");
             throw;
         }
+        ExitEngineScope exit;
 
         AddToGlobalPluginsList(pluginName);
+        if (isHotLoad)
+            LxlRecallOnServerStarted(engine);
         INFO(pluginName + " loaded.");
         return true;
     }
@@ -114,6 +118,7 @@ bool LxlLoadPlugin(const std::string& filePath)
 
         deleteEngine->getData().reset();
         ERROR("Fail to load " + filePath + "!\n");
+        ERRPRINT("[Error] In Plugin: " + ENGINE_OWN_DATA()->pluginName);
         ERRPRINT(e);
         ExitEngineScope exit;
 
@@ -150,6 +155,7 @@ string LxlUnloadPlugin(const std::string& name)
 
             RemoveFromGlobalPluginsList(name);
             LxlRemoveAllEventListeners(engine);
+            LxlRemoveCmdRegister(engine);
             LxlRemoveAllExportedFuncs(engine);
             engine->getData().reset();
             lxlModules.erase(lxlModules.begin() + i);
@@ -172,7 +178,7 @@ bool LxlReloadPlugin(const std::string& name)
     string unloadedPath = LxlUnloadPlugin(name);
     if (unloadedPath.empty())
         return false;
-    return LxlLoadPlugin(unloadedPath);
+    return LxlLoadPlugin(unloadedPath,true);
 }
 
 //重载全部插件
