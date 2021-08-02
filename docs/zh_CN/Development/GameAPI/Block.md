@@ -7,16 +7,17 @@
 获取玩家对象有两种方式：
 
 1. 通过注册**事件监听**函数，或者调用某些**返回方块对象**的函数，获取到BDS给出的与相关事件有关的方块对象  
-   详见[事件监听文档 - EventAPI](EventApi.md)  
+   详见 [事件监听文档 - EventAPI](zh_CN/Development/EventAPI/Listen.md)  
 
 2. 通过**方块坐标**手动生成方块对象  
    通过此函数来手动生成对象，注意，你要获取的方块必须处于已被加载的范围中，否则会出现问题
 
-   `mc.getBlock(pos)`
-
+   `mc.getBlock(pos)`  
+   `mc.getBlock(x,y,z,dimid)`
+   
    - 参数：
      - pos : `IntPos`  
-       方块坐标
+       方块坐标对象（或者使用x, y, z, dimid来确定方块位置）
    - 返回值：生成的方块对象 
    - 返回值类型：`Block`
      - 如返回值为 `Null` 则表示获取方块失败
@@ -42,17 +43,57 @@
 
 <br>
 
-### 其他方块函数
+### 方块对象 - 函数
+
+每一个方块对象都包含一些可以执行的成员函数（成员方法）。对于某个特定的方块对象`bl`，可以通过以下这些函数对这个方块进行一些操作
+
+#### 获取方块对应的NBT对象
+
+`bl.getTag()`
+
+- 返回值：方块的NBT对象
+- 返回值类型：`NbtCompound`
+
+<br>
+
+#### 写入方块对应的NBT对象
+
+`bl.setTag(nbt)`
+
+- 参数：
+  - nbt : `NbtCompound`  
+    NBT对象
+- 返回值：是否成功写入
+- 返回值类型：`Boolean`
+
+关于NBT对象的更多使用，请参考 [NBT接口文档](zh_CN/Development/NbtAPI/NBT.md)
+
+<br>
+
+#### 获取方块的BlockState
+
+`bl.getBlockState()`
+
+- 返回值：方块的BlockState
+- 返回值类型：`Object`
+
+方便函数，协助解析方块BlockState并转换为`Object`，方便读取与解析  
+等价于脚本执行`block.getTag().getTag("states").toObject()`
+
+<br>
+
+### 其他方块函数 API
 
 下面这些API提供了与游戏中指定位置方块互动的API
 
 #### 设置指定位置的方块
 
-`mc.setBlock(pos,block)`
+`mc.setBlock(pos,block)`  
+`mc.setBlock(x,y,z,dimid,block)`
 
 - 参数：
   - pos : `IntPos`  
-    目标方块位置
+    目标方块位置（或者使用x, y, z, dimid来确定方块位置）
   - block : `Block` 或 `String`  
     要设置成的方块对象或者方块名
 - 返回值：是否成功设置
@@ -67,11 +108,12 @@
 
 #### 在指定位置生成粒子效果
 
-`mc.spawnParticle(pos,type)`
+`mc.spawnParticle(pos,type)`  
+`mc.spawnParticle(x,y,z,dimid,type)`
 
 - 参数：
   - pos : `IntPos`  
-    目标方块位置
+    目标方块位置（或者使用x, y, z, dimid来确定方块位置）
   - type : `String`  
     要生成的粒子效果名称（可查阅wiki得知）
 - 返回值：是否成功生成

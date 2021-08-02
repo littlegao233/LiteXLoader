@@ -23,6 +23,7 @@ public:
     static Local<Object> newEntity(Actor *p);
     static Local<Object> newEntity(WActor p);
     static Actor* extractEntity(Local<Value> v);
+    Local<Value> getRawPtr(const Arguments& args);
 
     Local<Value> getName();
     Local<Value> getType();
@@ -31,8 +32,14 @@ public:
     Local<Value> getMaxHealth();
     Local<Value> getHealth();
     Local<Value> getInAir();
+    Local<Value> getSpeed();
 
     Local<Value> teleport(const Arguments& args);
     Local<Value> kill(const Arguments& args);
+    Local<Value> isPlayer(const Arguments& args);
     Local<Value> toPlayer(const Arguments& args);
+    Local<Value> setOnFire(const Arguments& args);
+    
+    Local<Value> getTag(const Arguments& args);
+    Local<Value> setTag(const Arguments& args);
 };

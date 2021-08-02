@@ -1,6 +1,8 @@
 #include "APIHelp.h"
 #include "GuiAPI.h"
 #include <Kernel/Gui.h>
+#include <Kernel/Packet.h>
+#include <Kernel/Player.h>
 #include <iostream>
 using namespace script;
 using namespace std;
@@ -8,7 +10,7 @@ using namespace std;
 //////////////////// Class Definition ////////////////////
 
 ClassDefine<SimpleFormClass> SimpleFormClassBuilder =
-    defineClass<SimpleFormClass>("SimpleForm")
+    defineClass<SimpleFormClass>("LXL_SimpleForm")
         .constructor(nullptr)
         .instanceFunction("setTitle", &SimpleFormClass::setTitle)
         .instanceFunction("setContent", &SimpleFormClass::setContent)
@@ -16,7 +18,7 @@ ClassDefine<SimpleFormClass> SimpleFormClassBuilder =
         .build();
 
 ClassDefine<CustomFormClass> CustomFormClassBuilder =
-    defineClass<CustomFormClass>("CustomForm")
+    defineClass<CustomFormClass>("LXL_CustomForm")
         .constructor(nullptr)
         .instanceFunction("setTitle", &CustomFormClass::setTitle)
         .instanceFunction("addLabel", &CustomFormClass::addLabel)
@@ -58,12 +60,12 @@ Local<Value> SimpleFormClass::setTitle(const Arguments& args)
 
     try {
         form["title"] = args[0].toStr();
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch (JSON_VALUE::exception& e) {
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in setTitle!")
 }
@@ -75,12 +77,12 @@ Local<Value> SimpleFormClass::setContent(const Arguments& args)
 
     try {
         form["content"] = args[0].toStr();
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch (JSON_VALUE::exception& e) {
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in setContent!")
 }
@@ -104,12 +106,12 @@ Local<Value> SimpleFormClass::addButton(const Arguments& args)
             oneButton["image"] = image;
         }
         form["buttons"].push_back(oneButton);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch (JSON_VALUE::exception& e) {
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addButton!")
 }
@@ -149,12 +151,12 @@ Local<Value> CustomFormClass::setTitle(const Arguments& args)
 
     try{
         form["title"] = args[0].toStr();
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in setTitle!")
 }
@@ -170,12 +172,12 @@ Local<Value> CustomFormClass::addLabel(const Arguments& args)
         itemAdd["text"] = args[0].toStr();
 
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addLabel!")
 }
@@ -197,12 +199,12 @@ Local<Value> CustomFormClass::addInput(const Arguments& args)
         itemAdd["default"] = args.size() >= 3 ? args[2].toStr() : "";
         
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addInput!")
 }
@@ -222,12 +224,12 @@ Local<Value> CustomFormClass::addSwitch(const Arguments& args)
             itemAdd["default"] = args[1].asBoolean().value();
         
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addSwitch!")
 }
@@ -248,12 +250,12 @@ Local<Value> CustomFormClass::addDropdown(const Arguments& args)
         itemAdd["default"] = args.size() >= 3 ? args[2].asNumber().toInt32() : 0;
         
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addDropdown!")
 }
@@ -292,12 +294,12 @@ Local<Value> CustomFormClass::addSlider(const Arguments& args)
         }
         
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addSlider!")
 }
@@ -325,24 +327,18 @@ Local<Value> CustomFormClass::addStepSlider(const Arguments& args)
         }
         
         form["content"].push_back(itemAdd);
-        return Boolean::newBoolean(true);
+        return this->getScriptObject();
     }
     catch(JSON_VALUE::exception &e){
         ERROR("Fail to Form currect Form string!");
         ERRPRINT(e.what());
-        return Boolean::newBoolean(false);
+        return Local<Value>();
     }
     CATCH("Fail in addStepSlider!")
 }
 
 
 //////////////////// APIs ////////////////////
-
-Local<Value> CancelForm(const Arguments& args)
-{
-    //############### FIX HERE ###############
-    return Boolean::newBoolean(true);
-}
 
 Local<Value> NewSimpleForm(const Arguments& args)
 {

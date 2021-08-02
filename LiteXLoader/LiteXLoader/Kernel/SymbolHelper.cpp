@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "SymbolHelper.h"
 using namespace std;
 
 
@@ -28,14 +29,31 @@ BlockSource* Raw_GetBlockSourceByDim(int dimid)
 	return dAccess<BlockSource*>(dim, 96);
 }
 
+Block* Raw_GetBlockByPos(BlockPos* bp, BlockSource* bs)
+{
+	return Raw_GetBlockByPos(bp->x, bp->y, bp->z, bs);
+}
+
 Block* Raw_GetBlockByPos(int x, int y, int z, BlockSource* bs)
 {
 	return SymCall("?getBlock@BlockSource@@QEBAAEBVBlock@@HHH@Z",
 		Block*, BlockSource*, int, int, int)(bs, x, y, z);
 }
 
+Block* Raw_GetBlockByPos(BlockPos *bp, int dimid)
+{
+	auto bs = Raw_GetBlockSourceByDim(dimid);
+	return Raw_GetBlockByPos(bp->x, bp->y, bp->z, bs);
+}
+
 Block* Raw_GetBlockByPos(IntVec4* pos)
 {
 	auto bs = Raw_GetBlockSourceByDim(pos->dim);
 	return Raw_GetBlockByPos(pos->x, pos->y, pos->z, bs);
+}
+
+Actor* Raw_GetFishingHookOwner(FishingHook* fh)
+{
+	return SymCall("?getOwner@FishingHook@@QEAAPEAVActor@@XZ",
+		Actor*, FishingHook*)(fh);
 }

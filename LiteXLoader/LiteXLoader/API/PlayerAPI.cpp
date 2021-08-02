@@ -1,10 +1,12 @@
 #include "APIHelp.h"
 #include "BaseAPI.h"
+#include "DeviceAPI.h"
 #include "PlayerAPI.h"
 #include "ItemAPI.h"
 #include "GuiAPI.h"
-#include "EngineOwnData.h"
-#include "EngineGlobalData.h"
+#include "NbtAPI.h"
+#include <Engine/EngineOwnData.h>
+#include <Engine/GlobalShareData.h>
 #include <Kernel/Player.h>
 #include <Kernel/Entity.h>
 #include <Kernel/Gui.h>
@@ -17,8 +19,10 @@ using namespace script;
 //////////////////// Class Definition ////////////////////
 
 ClassDefine<PlayerClass> PlayerClassBuilder =
-    defineClass<PlayerClass>("Player")
+    defineClass<PlayerClass>("LXL_Player")
         .constructor(nullptr)
+        .instanceFunction("getRawPtr", &PlayerClass::getRawPtr)
+
         .instanceProperty("name", &PlayerClass::getName)
         .instanceProperty("pos", &PlayerClass::getPos)
         .instanceProperty("realName", &PlayerClass::getRealName)
@@ -31,6 +35,8 @@ ClassDefine<PlayerClass> PlayerClassBuilder =
         .instanceProperty("health", &PlayerClass::getHealth)
         .instanceProperty("inAir", &PlayerClass::getInAir)
         .instanceProperty("sneaking", &PlayerClass::getSneaking)
+        .instanceProperty("speed",&PlayerClass::getSpeed)
+        .instanceProperty("direction", &PlayerClass::getDirection)
 
         .instanceFunction("isOP", &PlayerClass::isOP)
         .instanceFunction("setPermLevel", &PlayerClass::setPermLevel)
@@ -47,8 +53,12 @@ ClassDefine<PlayerClass> PlayerClassBuilder =
         .instanceFunction("getAllItems", &PlayerClass::getAllItems)
         .instanceFunction("rename", &PlayerClass::rename)
         .instanceFunction("addLevel", &PlayerClass::addLevel)
+        .instanceFunction("setOnFire", &PlayerClass::setOnFire)
         .instanceFunction("transServer", &PlayerClass::transServer)
         .instanceFunction("crash", &PlayerClass::crash)
+        .instanceFunction("setOnFire", &PlayerClass::setOnFire)
+        .instanceFunction("getDevice", &PlayerClass::getDevice)
+        .instanceFunction("removeItem", &PlayerClass::removeItem)
 
         .instanceFunction("getScore", &PlayerClass::getScore)
         .instanceFunction("setScore", &PlayerClass::setScore)
@@ -67,6 +77,9 @@ ClassDefine<PlayerClass> PlayerClassBuilder =
         .instanceFunction("setExtraData", &PlayerClass::setExtraData)
         .instanceFunction("getExtraData", &PlayerClass::getExtraData)
         .instanceFunction("delExtraData", &PlayerClass::delExtraData)
+
+        .instanceFunction("setTag", &PlayerClass::setTag)
+        .instanceFunction("getTag", &PlayerClass::getTag)
         .build();
 
 
@@ -157,8 +170,7 @@ Player* PlayerClass::get()
     if (!isValid)
         return nullptr;
     else
-        return SymCall("?getPlayer@Level@@UEBAPEAVPlayer@@UActorUniqueID@@@Z"
-        , Player*, Level*, ActorUniqueID)(mc->getLevel(), id);
+        return Raw_GetPlayerByUniqueId(id);
 }
 
 Local<Value> PlayerClass::getName()
@@ -269,6 +281,30 @@ Local<Value> PlayerClass::getSneaking()
     CATCH("Fail in getSneaking!")
 }
 
+Local<Value> PlayerClass::getSpeed()
+{
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        return Number::newNumber(Raw_GetSpeed((Actor*)player));
+    }
+    CATCH("Fail in getSpeed!")
+}
+
+Local<Value> PlayerClass::getDirection()
+{
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        return Number::newNumber(Raw_GetDirection(player));
+    }
+    CATCH("Fail in getSpeed!")
+}
+
 Local<Value> PlayerClass::getMaxHealth()
 {
     try{
@@ -305,6 +341,18 @@ Local<Value> PlayerClass::getInAir()
     CATCH("Fail in GetInAir!")
 }
 
+Local<Value> PlayerClass::getRawPtr(const Arguments& args)
+{
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+        else
+            return Number::newNumber((intptr_t)player);
+    }
+    CATCH("Fail in getRawPtr!")
+}
+
 Local<Value> PlayerClass::teleport(const Arguments& args)
 {
     CHECK_ARGS_COUNT(args,1)
@@ -316,9 +364,15 @@ Local<Value> PlayerClass::teleport(const Arguments& args)
         {
             // FloatPos
             FloatPos* posObj = FloatPos::extractPos(args[0]);
-            if (!posObj)
+            if (posObj)
+            {
+                pos = *posObj;
+            }
+            else
+            {
+                ERROR("Wrong type of argument in teleport!");
                 return Local<Value>();
-            pos = *posObj;
+            }
         }
         else if (args.size() == 4)
         {
@@ -536,8 +590,8 @@ Local<Value> PlayerClass::getAllItems(const Arguments& args)
 
 Local<Value> PlayerClass::rename(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,1)
-    CHECK_ARG_TYPE(args[0],ValueKind::kString)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
     
     try{
         Player* player = get();
@@ -551,8 +605,8 @@ Local<Value> PlayerClass::rename(const Arguments& args)
 
 Local<Value> PlayerClass::addLevel(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args, 1)
-    CHECK_ARG_TYPE(args[0], ValueKind::kNumber)
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kNumber);
 
     try {
         Player* player = get();
@@ -590,6 +644,35 @@ Local<Value> PlayerClass::crash(const Arguments& args)
         return Boolean::newBoolean(Raw_CrashPlayer(player));
     }
     CATCH("Fail in crashPlayer!")
+}
+
+Local<Value> PlayerClass::getDevice(const Arguments& args)
+{
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        return DeviceClass::newDevice(player);
+    }
+    CATCH("Fail in getDevice!")
+}
+
+Local<Value> PlayerClass::removeItem(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 2);
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        int inventoryId = args[0].toInt();
+        int count = args[1].toInt();
+
+        bool result = Raw_RemoveItem(player, inventoryId, count);
+        return Boolean::newBoolean(result);
+    }
+    CATCH("Fail in removeItem!")
 }
 
 Local<Value> PlayerClass::getScore(const Arguments& args)
@@ -759,8 +842,8 @@ Local<Value> PlayerClass::sendSimpleForm(const Arguments& args)
         int formId = Raw_SendSimpleForm(player, args[0].toStr(), args[1].toStr(), texts, images);
 
         
-        FormCallbackKey key{ LXL_SCRIPT_LANG_TYPE,(unsigned)formId };
-        engineGlobalData->formCallbacks[key] = { EngineScope::currentEngine(),Global<Function>(args[4].asFunction()) };
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].engine = EngineScope::currentEngine();
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].func = args[4].asFunction();
 
         return Number::newNumber(formId);
     }
@@ -782,8 +865,8 @@ Local<Value> PlayerClass::sendModalForm(const Arguments& args)
             return Local<Value>();
 
         int formId = Raw_SendModalForm(player, args[0].toStr(), args[1].toStr(), args[2].toStr(), args[3].toStr());
-        FormCallbackKey key{ LXL_SCRIPT_LANG_TYPE,(unsigned)formId };
-        engineGlobalData->formCallbacks[key] = { EngineScope::currentEngine(),Global<Function>(args[4].asFunction()) };
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].engine = EngineScope::currentEngine();
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].func = args[4].asFunction();
 
         return Number::newNumber(formId);
     }
@@ -804,8 +887,8 @@ Local<Value> PlayerClass::sendCustomForm(const Arguments& args)
         string data = JSON_VALUE::parse(args[0].toStr()).dump();
         int formId = Raw_SendCustomForm(player, data);
         
-        FormCallbackKey key{ LXL_SCRIPT_LANG_TYPE,(unsigned)formId };
-        engineGlobalData->formCallbacks[key] = { EngineScope::currentEngine(),Global<Function>(args[1].asFunction()) };
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].engine = EngineScope::currentEngine();
+        ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId].func = args[1].asFunction();
         
         return Number::newNumber(formId);
     }
@@ -837,8 +920,7 @@ Local<Value> PlayerClass::sendForm(const Arguments& args)
         if (jsonForm != nullptr)
         {
             int formId = Raw_SendRawForm(player, jsonForm->dump());
-            FormCallbackKey key{ LXL_SCRIPT_LANG_TYPE,(unsigned)formId };
-            engineGlobalData->formCallbacks[key] = { EngineScope::currentEngine(),Global<Function>(args[1].asFunction()) };
+            ENGINE_OWN_DATA()->formCallbacks[(unsigned)formId] = { EngineScope::currentEngine(),Global<Function>(args[1].asFunction()) };
 
             return Number::newNumber(formId);
         }
@@ -896,6 +978,10 @@ Local<Value> PlayerClass::getExtraData(const Arguments& args)
 
         return ENGINE_OWN_DATA()->playerDataDB.at(Raw_GetPlayerName(player) + "-" + key).get();
     }
+    catch (const std::out_of_range& e)
+    {
+        return Local<Value>();
+    }
     CATCH("Fail in getExtraData!")
 }
 
@@ -918,4 +1004,51 @@ Local<Value> PlayerClass::delExtraData(const Arguments& args)
         return Boolean::newBoolean(true);
     }
     CATCH("Fail in delExtraData!")
+}
+
+Local<Value> PlayerClass::setOnFire(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        int time = args[0].toInt();
+        bool result = Raw_SetOnFire((Actor*)player, time);
+        return Boolean::newBoolean(result);
+    }
+    CATCH("Fail in setOnFire!")
+}
+
+Local<Value> PlayerClass::getTag(const Arguments& args)
+{
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        return NbtCompound::newNBT(Tag::fromActor((Actor*)player));
+    }
+    CATCH("Fail in getTag!")
+}
+
+Local<Value> PlayerClass::setTag(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+
+    try {
+        Player* player = get();
+        if (!player)
+            return Local<Value>();
+
+        auto nbt = NbtCompound::extractNBT(args[0]);
+        if (!nbt)
+            return Local<Value>();    //Null
+
+        nbt->setActor((Actor*)player);
+        return Boolean::newBoolean(true);
+    }
+    CATCH("Fail in setTag!")
 }

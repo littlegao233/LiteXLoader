@@ -1,9 +1,10 @@
 ﻿#include <ScriptX/ScriptX.h>
 #include <API/APIHelp.h>
 #include <API/EventAPI.h>
-#include <API/EngineGlobalData.h>
-#include <API/EngineOwnData.h>
-#include <Kernel/Db.h>
+#include <Engine/GlobalShareData.h>
+#include <Engine/EngineOwnData.h>
+#include <Engine/LocalShareData.h>
+#include <Kernel/Data.h>
 #include <Kernel/System.h>
 #include <Kernel/i18n.h>
 #include <windows.h>
@@ -45,11 +46,15 @@ void LoaderInfo()
 {
     INFO(std::string("LXL for ") + LXL_SCRIPT_LANG_TYPE + " loaded");
     INFO(std::string("Version ") + to_string(LXL_VERSION_MAJOR) + "." + to_string(LXL_VERSION_MINOR) + "."
-        + to_string(LXL_VERSION_BUILD) + (LXL_VERSION_IS_BETA ? " Beta" : ""));
+        + to_string(LXL_VERSION_REVISION) + (LXL_VERSION_IS_BETA ? " Beta" : ""));
 }
 
 void entry()
 {
+    //设置全局SEH处理
+    _set_se_translator(seh_exception::TranslateSEHtoCE);
+
+    //读取配置文件
     Raw_DirCreate(std::filesystem::path(LXL_CONFIG_PATH).remove_filename().u8string());
     iniConf = Raw_IniOpen(LXL_CONFIG_PATH);
     if (!iniConf)
@@ -57,11 +62,11 @@ void entry()
     lxlLogLevel = Raw_IniGetInt(iniConf,"Main","LxlLogLevel",1);
 
     //初始化全局数据
-    bool isFirstInstance;
-    InitEngineGlobalData(&isFirstInstance);
+    InitLocalShareData();
+    InitGlobalShareData();
 
     //欢迎
-    if(isFirstInstance)
+    if(localShareData->isFirstInstance)
         Welcome();
     LoaderInfo();
 
@@ -82,17 +87,6 @@ void entry()
 
     //初始化事件监听
     InitEventListeners();
-
-    //GC循环
-    int gcTime = Raw_IniGetInt(iniConf, "Advanced", "GCInterval", 10);
-    std::thread([gcTime]() {
-        std::this_thread::sleep_for(std::chrono::seconds(gcTime));
-        for (auto engine : lxlModules)
-        {
-            EngineScope enter(engine);
-            engine->messageQueue()->loopQueue(utils::MessageQueue::LoopType::kLoopOnce);
-        }
-    }).detach();    //############## loadPlugin加锁 ################
 
     Raw_IniClose(iniConf);
 }

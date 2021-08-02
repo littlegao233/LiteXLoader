@@ -1,10 +1,10 @@
 #include "APIHelp.h"
 #include "LxlAPI.h"
-#include "EngineGlobalData.h"
-#include "EngineOwnData.h"
-#include "LoaderHelper.h"
+#include <Engine/GlobalShareData.h>
+#include <Engine/EngineOwnData.h>
+#include <Engine/LoaderHelper.h>
 #include <Kernel/System.h>
-#include "LoaderHelper.h"
+#include <Engine/LoaderHelper.h>
 #include <Configs.h>
 #include <string>
 #include <filesystem>
@@ -17,11 +17,32 @@ Local<Value> LxlGetVersion(const Arguments& args)
         Local<Object> ver = Object::newObject();
         ver.set("major", LXL_VERSION_MAJOR);
         ver.set("minor", LXL_VERSION_MINOR);
-        ver.set("build", LXL_VERSION_BUILD);
+        ver.set("revision", LXL_VERSION_REVISION);
         ver.set("isBeta", LXL_VERSION_IS_BETA);
         return ver;
     }
     CATCH("Fail in LxlGetVersion!")
+}
+
+Local<Value> LxlCheckVersion(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kNumber);
+    if (args.size() >= 2)
+        CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
+    if (args.size() >= 3)
+        CHECK_ARG_TYPE(args[2], ValueKind::kNumber);
+
+    try {
+        if (args[0].toInt() > LXL_VERSION_MAJOR
+            || (args.size() >= 2 && args[1].toInt() > LXL_VERSION_MINOR)
+            || (args.size() >= 3 && args[2].toInt() > LXL_VERSION_REVISION))
+        {
+            return Boolean::newBoolean(false);
+        }
+        return Boolean::newBoolean(true);
+    }
+    CATCH("Fail in LxlCheckVersion!")
 }
 
 Local<Value> LxlListPlugins(const Arguments& args)
@@ -53,7 +74,7 @@ Local<Value> LxlRequire(const Arguments& args)
         string thisName = ENGINE_OWN_DATA()->pluginName;
 
         //已加载插件
-        for (auto pluginName : engineGlobalData->pluginsList)
+        for (auto pluginName : globalShareData->pluginsList)
         {
             if (pluginName == require)
             {
@@ -153,4 +174,15 @@ Local<Value> LxlRequire(const Arguments& args)
         }
     }
     CATCH("Fail in LxlRequire!")
+}
+
+Local<Value> LxlEval(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+    CHECK_ARG_TYPE(args[0], ValueKind::kString);
+    try
+    {
+        return EngineScope::currentEngine()->eval(args[0].toStr());
+    }
+    CATCH("Fail in LxlEval!")
 }

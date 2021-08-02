@@ -56,7 +56,7 @@ bool judgeIsArray(int index)
       lua_pushvalue(lua, -2);
       if(!lua_isnumber(lua,-1) || lua_tonumber(lua,-1) != ++currectArrIndex)
       {
-        lua_pop(lua, 2);
+        lua_pop(lua, 3);
         return false;
       }
       lua_pop(lua, 2);

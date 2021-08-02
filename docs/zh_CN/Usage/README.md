@@ -8,12 +8,11 @@
 
 `LiteXLoader` 主要发布于**MineBBS**。在安装 `LiteXLoader` 之前，你需要先配置好其依赖的 `LiteLoader` 加载器环境。
 
-- 请[移步MineBBS](https://www.minebbs.com/)下载对应版本的 `LiteLoader` ，按要求解压之后运行SymDB2.exe生成相关数据
-- 如果有插件需要使用 **LXL** 的内置经济系统，还需要下载 `LLMoney` 经济插件，并将其放置在插件目录 `plugins` 中
+- 请[点击此处 移步MineBBS](https://www.minebbs.com/resources/liteloader.2059/)下载对应版本的 `LiteLoader` ，按要求解压之后运行SymDB2.exe生成相关数据
 
 在完成上述操作，并确认成功后，接下来安装`LiteXLoader` ：
 
-1. [移步MineBBS](https://www.minebbs.com/)下载对应版本的`LiteXLoader`，解压
+1. [点击此处 移步MineBBS](https://www.minebbs.com/resources/litexloader-x-bds.2670/)下载对应版本的`LiteXLoader`，解压
 2. 把全部内容复制到 **BDS** 的`plugins`目录中。如果复制时提示文件有冲突，选择覆盖即可。
 
 安装完毕！接下来，你就可以安装你想要的 **LXL** 插件了
@@ -37,9 +36,6 @@ Language=zh_CN				# LXL语言环境，默认为zh_CN，即中文
 LxlLogLevel=4				# LXL日志等级，默认为4，即显示除了debug信息以外的其他所有信息
 PluginsDir=./plugins		# LXL插件目录，默认为plugins
 DependsDir=./plugins/lib	# LXL依赖库目录，默认为plugins/lib
-
-[Advanced]
-GCInterval=10				# 引擎垃圾回收周期，默认为10秒
 ```
 
 
@@ -64,9 +60,9 @@ GCInterval=10				# 引擎垃圾回收周期，默认为10秒
 - `lxl list`  
   列出LXL当前加载的所有插件列表
 - `lxl load ./plugins/xxxx.js`  
-  加载位于指定路径的插件。路径是相对于BDS根目录的相对路径。
+  热加载位于指定路径的插件。路径是相对于BDS根目录的相对路径。
 - `lxl unload xxxx.lua`  
-  卸载在插件列表中名为 xxxx.lua 的插件
+  热卸载在插件列表中名为 xxxx.lua 的插件
 - `lxl reload xxxx.js`  
   重新加载在插件列表中名为 xxxx.js 的插件
 - `lxl reload`  
@@ -77,5 +73,6 @@ GCInterval=10				# 引擎垃圾回收周期，默认为10秒
 - 热卸载插件后，此插件注册的命令不会被删除。玩家使用那些命令时，会提示命令不存在
 - 如果你的插件有导出的函数被其他插件 Import，则当你卸载 / 重载此插件后，其他插件对应的 Import 会失效  
 - 请勿在服务器尚未启动完毕，或者服务器中有大量玩家时卸载或者重载插件！否则服务器有可能发生崩溃
+- 热加载 / 热重载一个插件之后，插件注册的`onServerStarted`事件会被立刻调用一次（因为此时服务器已经开启完毕了）
 
 插件热管理机制仅供调试插件时使用。在生产环境中最好避免使用，以免出现一些奇奇怪怪的问题。

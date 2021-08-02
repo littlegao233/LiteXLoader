@@ -1,10 +1,12 @@
 #include "Global.h"
 #include "Player.h"
 #include "Packet.h"
+#include "Entity.h"
 #include "SymbolHelper.h"
+#include "ThirdParty.h"
 #include "Global.h"
 using namespace std;
-
+class NetworkHandler;
 string  Raw_GetPlayerName(Player* player)
 {
     return player->getNameTag();
@@ -12,8 +14,7 @@ string  Raw_GetPlayerName(Player* player)
 
 FloatVec4 Raw_GetPlayerPos(Player* player)
 {
-    auto pos = player->getPos();
-    return {pos.x,pos.y,pos.z,WPlayer(*player).getDimID()};
+    return Raw_GetEntityPos((Actor*)player);
 }
 
 string Raw_GetXuid(Player* player)
@@ -54,9 +55,15 @@ bool Raw_GetSneaking(Player *player)
     return SymCall("?isSneaking@Actor@@QEBA_NXZ", bool, Player*)(player);
 }
 
+int Raw_GetDirection(Player* player)
+{
+    return (int)SymCall("?getDirection@Player@@QEBAHXZ", char, Player*)(player);
+}
+
 bool  Raw_RuncmdAs(Player *player, const string &cmd)
 {
-    return liteloader::runcmdAs(player,cmd);
+    //return liteloader::runcmdAs(player,cmd);
+    return Raw_SendCommandRequestPacket(player, cmd);
 }
 
 bool Raw_TeleportPlayer(Player* player, const FloatVec4 &pos)
@@ -111,6 +118,12 @@ ItemStack* Raw_GetHand(Player* player)
     return (ItemStack*)&(player->getSelectedItem());
 }
 
+Container* Raw_GetContainer(Player* pl)
+{
+    return SymCall("?getInventory@Player@@QEAAAEAVContainer@@XZ", Container*, 
+        Player*)(pl);
+}
+
 bool Raw_GetAllItems(Player* player, ItemStack** hand, ItemStack** offHand, vector<ItemStack*>* inventory,
     vector<ItemStack*>* armor, vector<ItemStack*>* endChest)
 {
@@ -121,7 +134,7 @@ bool Raw_GetAllItems(Player* player, ItemStack** hand, ItemStack** offHand, vect
     *offHand = SymCall("?getOffhandSlot@Actor@@QEBAAEBVItemStack@@XZ", ItemStack*, Player*)(player);
 
     //Inventory
-    Container* container = SymCall("?getInventory@Player@@QEAAAEAVContainer@@XZ", Container*, Player*)(player);
+    auto container = Raw_GetContainer(player);
     auto slot = container->getSlots();
     for (auto& item : slot)
         inventory->push_back((ItemStack*)item);
@@ -160,20 +173,15 @@ bool Raw_TransServer(Player* player, const std::string& server, short port)
 
 bool Raw_CrashPlayer(Player* player)
 {
-    void* pkt = Raw_CreatePacket(0x3A);
-    dAccess<int, 14>(pkt) = 0;
-    dAccess<int, 15>(pkt) = 0;
-    dAccess<bool, 48>(pkt) = 1;
-
-    return Raw_SendPacket(player,pkt);
+    return Raw_SendCrashClientPacket(player);
 }
 
 int Raw_GetScore(Player* player, const std::string &key)
 {
-    Objective* obj = g_scoreboard->getObjective(key);
+    Objective* obj = globalScoreBoard->getObjective(key);
     if (obj)
     {
-        auto id = g_scoreboard->getScoreboardId(*(Actor*)player);
+        auto id = globalScoreBoard->getScoreboardId(*(Actor*)player);
         auto score = obj->getPlayerScore(id);
         return score.getCount();
     }
@@ -182,12 +190,12 @@ int Raw_GetScore(Player* player, const std::string &key)
 
 bool Raw_SetScore(Player* player, const std::string &key, int value)
 {
-    Objective* obj = g_scoreboard->getObjective(key);
+    Objective* obj = globalScoreBoard->getObjective(key);
     if (obj)
     {
         bool a1 = true;
         bool &pa = a1;
-        g_scoreboard->modifyPlayerScore(pa,g_scoreboard->getScoreboardId(*(Actor*)player), *obj, value, 0);   //Set
+        globalScoreBoard->modifyPlayerScore(pa,globalScoreBoard->getScoreboardId(*(Actor*)player), *obj, value, 0);   //Set
         return true;
     }
     return false;
@@ -195,12 +203,12 @@ bool Raw_SetScore(Player* player, const std::string &key, int value)
 
 bool Raw_AddScore(Player* player, const std::string &key, int value)
 {
-    Objective* obj = g_scoreboard->getObjective(key);
+    Objective* obj = globalScoreBoard->getObjective(key);
     if (obj)
     {
         bool a1 = true;
         bool& pa = a1;
-        g_scoreboard->modifyPlayerScore(pa, g_scoreboard->getScoreboardId(*(Actor*)player), *obj, value, 1);   //Add
+        globalScoreBoard->modifyPlayerScore(pa, globalScoreBoard->getScoreboardId(*(Actor*)player), *obj, value, 1);   //Add
         return true;
     }
     return false;
@@ -208,12 +216,12 @@ bool Raw_AddScore(Player* player, const std::string &key, int value)
 
 bool Raw_RemoveScore(Player* player, const std::string &key)
 {
-    Objective* obj = g_scoreboard->getObjective(key);
+    Objective* obj = globalScoreBoard->getObjective(key);
     if (obj)
     {
         bool a1 = true;
         bool& pa = a1;
-        g_scoreboard->modifyPlayerScore(pa, g_scoreboard->getScoreboardId(*(Actor*)player), *obj, 0, 2);   //Remove
+        globalScoreBoard->modifyPlayerScore(pa, globalScoreBoard->getScoreboardId(*(Actor*)player), *obj, 0, 2);   //Remove
         return true;
     }
     return false;
@@ -221,12 +229,12 @@ bool Raw_RemoveScore(Player* player, const std::string &key)
 
 bool Raw_SetSidebar(Player *player, std::string title, const std::vector<std::pair<std::string,int>> &data)
 {
-    Raw_SendSetDisplayObjectivePacket(player, title, "name");
+    Raw_SendSetDisplayObjectivePacket(player, title, "__fake_score_objective__");
 
     vector<ScorePacketInfo> info;
     for (auto& x : data)
     {
-        ScorePacketInfo i(g_scoreboard->createScoreboardId(x.first),x.second,x.first);
+        ScorePacketInfo i(globalScoreBoard->createScoreboardId(x.first),x.second,x.first);
         info.push_back(i);
     }
 
@@ -250,7 +258,14 @@ bool Raw_RemoveBossBar(Player *player)
 
 vector<Player*> Raw_GetOnlinePlayers()
 {
-    return isServerStarted ? liteloader::getAllPlayers() : vector<Player*>();
+    try
+    {
+        return isServerStarted ? liteloader::getAllPlayers() : vector<Player*>();
+    }
+    catch (const seh_exception& e)
+    {
+        return vector<Player*>();
+    }
 }
 
 bool Raw_IsPlayerValid(Player *player)
@@ -265,4 +280,24 @@ bool Raw_IsPlayerValid(Player *player)
 int Raw_GetPlayerDimId(Player* player)
 {
     return WPlayer(*player).getDimID();
+}
+
+Player* Raw_GetPlayerByUniqueId(ActorUniqueID id) {
+    return SymCall("?getPlayer@Level@@UEBAPEAVPlayer@@UActorUniqueID@@@Z"
+        , Player*, Level*, ActorUniqueID)(mc->getLevel(), id);
+}
+
+bool Raw_RefreshInventory(Player* pl) {
+    SymCall("?sendInventory@ServerPlayer@@UEAAX_N@Z", void,
+        ServerPlayer*, bool)((ServerPlayer*)pl, true);
+    return true;
+}
+
+bool Raw_RemoveItem(Player* pl, int inventoryId, int count) {
+    
+    auto container = Raw_GetContainer(pl);
+    SymCall("?removeItem@Container@@UEAAXHH@Z", void,
+        Container*, unsigned int, int)(container, inventoryId, count);
+    Raw_RefreshInventory(pl);
+    return true;
 }

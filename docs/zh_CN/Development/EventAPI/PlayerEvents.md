@@ -9,25 +9,37 @@
 
 ## 🏃‍♂️ 玩家相关事件
 
-#### `"onJoin"` - 玩家连接服务器
+#### `"onPreJoin"` - 玩家开始连接服务器
 
 - 监听函数原型
   `function(player)`
 - 参数：
   - player : `Player`  
-    进入服务器的玩家对象
+    正在连接服务器的玩家对象
+- 拦截事件：不可以拦截一些
 
+注：在这个监听函数中只能获取一些玩家的基础信息，比如名字、IP、xuid等。因为此时玩家尚未完全进服
+
+<br>
+
+#### `"onJoin"` - 玩家进入游戏（加载世界完成）
+
+- 监听函数原型
+  `function(player)`
+- 参数：
+  - player : `Player`  
+    进入游戏的玩家对象
 - 拦截事件：不可以拦截
 
 <br>
 
-#### `"onLeft"` - 玩家离开服务器
+#### `"onLeft"` - 玩家离开游戏
 
 - 监听函数原型
   `function(player)`
 - 参数：
   - player : `Player`  
-    离开服务器的玩家对象
+    离开游戏的玩家对象
 
 - 拦截事件：不可以拦截
 
@@ -40,6 +52,18 @@
 - 参数：
   - player : `Player`  
     重生的玩家对象
+- 拦截事件：不可以拦截
+
+<br>
+
+#### `"onPlayerDie"` - 玩家死亡
+
+- 监听函数原型
+  `function(player)`
+- 参数：
+  - player : `Player`  
+    死亡的玩家对象
+
 - 拦截事件：不可以拦截
 
 <br>
@@ -203,7 +227,7 @@
 
 <br>
 
-#### `"onDestroyingBlock"` - 玩家正在破坏方块  / 点击左键
+#### `"onStartDestroyBlock"` - 玩家开始破坏方块  / 点击左键
 
 - 监听函数原型
   `function(player,block)`
@@ -215,8 +239,6 @@
     正在被破坏的方块对象
 
 - 拦截事件：不可以拦截
-
-注：在破坏方块的过程中，会在服务端反复多次激发这个事件
 
 <br>
 
@@ -282,26 +304,31 @@
 
 <br>
 
-#### `"onContainerChangeSlot"` - 玩家向容器放入 / 取出物品
+#### `"onInventoryChange"` - 玩家物品栏变化
 
 - 监听函数原型
-  `function(player,container,slotNum,isPutIn,item)`
-
+  `function(player,slotNum,oldItem,newItem)`
 - 参数：
   - player : `Player`  
-    操作容器的玩家对象
-  - container : `Block`  
-    被操作的容器的方块对象
+    操作物品栏的玩家对象
   - slotNum : `Integer`  
-    操作容器的格子位置（第slotNum个格子）
-  - isPutIn : `Boolean`  
-    是否为放入物品
-    - 为 `true` 表示正在放入物品
-    - 为 `false` 表示正在取出物品
-  - item : `Item`  
-    被放入 / 取出的物品对象
-
+    操作物品栏的格子位置（第slotNum个格子）
+  - oldItem : `Item`  
+    格子中的原来旧物品对象
+  - newItem : `Item`  
+    格子中新的物品对象
 - 拦截事件：不可以拦截
+
+对回调参数的解释：  
+旧物品对象与新物品对象有多种不同的组合情况，表示格子内不同的变化情况
+
+- 放入物品：旧物品对象为空，新物品对象不为空
+- 取出物品：旧物品对象不为空，新物品对象不为空
+- 物品增加堆叠：旧物品对象的`type` == 新物品对象的`type`，且旧物品对象的`count` < 新物品对象的`count`
+- 物品减少堆叠：旧物品对象的`type` == 新物品对象的`type`，且旧物品对象的`count` > 新物品对象的`count`
+- 替换物品：旧物品对象的`type` 不等于 新物品对象的`type`，且两物品对象均不为空
+
+注意：当某个玩家进服时，在进服前的某个时刻，物品栏的每一格都会先触发一次这个事件
 
 <br>
 
@@ -333,7 +360,7 @@
     盔甲栏中的物品对象
 - 拦截事件：不可以拦截
 
-注：当玩家刚进入服务器时，`onSetArmor`事件会被激活一次
+注意：当某个玩家进服时，在进服前的某个时刻，物品栏的每一格都会先触发一次这个事件
 
 <br>
 
@@ -347,3 +374,36 @@
   - pos : `IntPos`  
     被使用的重生锚的位置
 - 拦截事件：函数返回`false`
+
+<br>
+
+#### "onFishingHookRetrieve" - 玩家收鱼钩
+
+- 监听函数原型
+  `function(player,fishingHook)`
+- 参数：
+  - player : `Player`  
+    收起该鱼钩的玩家对象
+  - fishingHook : `Entity`  
+    被收起的鱼钩的实体对象
+- 拦截事件：函数返回`false`
+
+注：拦截此事件的实际效果是鱼钩勾不起任何东西，但客户端依然有假收勾的场景。
+
+<br>
+
+#### "onOpenContainerScreen" - 玩家打开容器类GUI
+
+- 监听函数原型
+  `function(player)`
+- 参数：
+  - player : `Player`  
+    尝试骑乘的玩家对象
+- 拦截事件：函数返回`false`
+
+注：此事件非常强力，甚至可以拦截打开背包。
+
+
+
+
+

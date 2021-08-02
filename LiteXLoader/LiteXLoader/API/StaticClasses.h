@@ -10,11 +10,13 @@
 #include "ServerAPI.h"
 #include "PlayerAPI.h"
 #include "ScriptAPI.h"
-#include "DbAPI.h"
+#include "DataAPI.h"
 #include "NetworkAPI.h"
 #include "GuiAPI.h"
 #include "LxlAPI.h"
-#include "RemoteCall.h"
+#include "SystemAPI.h"
+#include "GameSystemAPI.h"
+#include <Engine/RemoteCall.h>
 using namespace script;
 
 class McClass
@@ -36,7 +38,6 @@ public:
 
     static Local<Value> newSimpleForm(const Arguments& args) { return NewSimpleForm(args); }
     static Local<Value> newCustomForm(const Arguments& args) { return NewCustomForm(args); }
-    static Local<Value> cancelForm(const Arguments& args) { return CancelForm(args); }
 
     static Local<Value> regConsoleCmd(const Arguments& args) { return RegisterConsoleCmd(args); }
     static Local<Value> setMotd(const Arguments& args) { return SetMotd(args); }
@@ -45,6 +46,10 @@ public:
 
     static Local<Value> newIntPos(const Arguments& args) { return NewIntPos(args); }
     static Local<Value> newFloatPos(const Arguments& args) { return NewFloatPos(args); }
+
+    static Local<Value> newScoreObjective(const Arguments& args) { return NewScoreObjective(args); }
+    static Local<Value> removeScoreObjective(const Arguments& args) { return RemoveScoreObjective(args); }
+    static Local<Value> listAllScoreObjective(const Arguments& args) { return ListAllScoreObjective(args); }
 };
 
 static ClassDefine<void> McClassBuilder =
@@ -61,13 +66,15 @@ static ClassDefine<void> McClassBuilder =
         .function("spawnParticle", &McClass::spawnParticle)
         .function("newSimpleForm", &McClass::newSimpleForm)
         .function("newCustomForm", &McClass::newCustomForm)
-        .function("cancelForm", &McClass::cancelForm)
         .function("regConsoleCmd", &McClass::regConsoleCmd)
         .function("setMotd", &McClass::setMotd)
         .function("setOnlinePlayer", &McClass::setOnlinePlayer)
         .function("sendCmdOutput", &McClass::sendCmdOutput)
         .function("newIntPos", &McClass::newIntPos)
         .function("newFloatPos", &McClass::newFloatPos)
+        .function("newScoreObjective", &McClass::newScoreObjective)
+        .function("removeScoreObjective", &McClass::removeScoreObjective)
+        .function("listAllScoreObjective", &McClass::listAllScoreObjective)
         .function("crash", CrashBDS)
         .build();
 
@@ -80,6 +87,7 @@ public:
     static Local<Value> randomGuid(const Arguments& args) { return RandomGuid(args); }
 
     static Local<Value> cmd(const Arguments& args) { return SystemCmd(args); }
+    static Local<Value> newProcess(const Arguments& args) { return SystemNewProcess(args); }
 };
 
 static ClassDefine<void> SystemClassBuilder =
@@ -88,6 +96,7 @@ static ClassDefine<void> SystemClassBuilder =
         .function("getTimeObj", &SystemClass::getTimeObj)
         .function("randomGuid", &SystemClass::randomGuid)
         .function("cmd", &SystemClass::cmd)
+        .function("newProcess", &SystemClass::newProcess)
         .build();
 
 
@@ -114,6 +123,7 @@ static ClassDefine<void> FileClassBuilder =
         .function("writeLine", &FileClass::writeLine)
 
         .function("createDir", &FileClass::createDir)
+        .function("mkdir", &FileClass::createDir)
         .function("copy", &FileClass::copy)
         .function("move", &FileClass::move)
         .function("rename", &FileClass::rename)
@@ -146,6 +156,7 @@ static ClassDefine<void> LoggerClassBuilder =
         .function("debug", &LoggerClass::debug)
         .function("info", &LoggerClass::info)
         .function("warn", &LoggerClass::warn)
+        .function("warning", & LoggerClass::warn)
         .function("error", &LoggerClass::error)
         .function("fatal", &LoggerClass::fatal)
 
@@ -219,17 +230,21 @@ class LxlClass
 {
 public:
     static Local<Value> version(const Arguments& args) { return LxlGetVersion(args); }
+    static Local<Value> checkVersion(const Arguments& args) { return LxlCheckVersion(args); }
     static Local<Value> listPlugins(const Arguments& args) { return LxlListPlugins(args); }
     static Local<Value> importFunc(const Arguments& args) { return LxlImport(args); }
     static Local<Value> exportFunc(const Arguments& args) { return LxlExport(args); }
     static Local<Value> require(const Arguments& args) { return LxlRequire(args); }
+    static Local<Value> eval(const Arguments& args) { return LxlEval(args); }
 };
 
 static ClassDefine<void> LxlClassBuilder =
     defineClass("lxl")
         .function("version", &LxlClass::version)
+        .function("checkVersion", &LxlClass::checkVersion)
         .function("listPlugins", &LxlClass::listPlugins)
         .function("import", &LxlClass::importFunc)
         .function("export", &LxlClass::exportFunc)
         .function("require", &LxlClass::require)
+        .function("eval", &LxlClass::eval)
         .build();

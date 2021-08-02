@@ -1,8 +1,38 @@
-# LiteXLoader - 重大更改页面
+# 📋 LiteXLoader - 重大更改页面
 
 这里列出了LXL引擎对 **API** 进行的一些可能会造成 **不向下兼容** 的重大更改。  
 如果你的插件在更新版本后发生问题，请首先查阅本章节的相关内容，检查是否由API变更导致。  
 更改内容按时间顺序由新到旧展示。
+
+注意：此处只会列出造成不兼容变化的API更改。如果要查看所有更新日志，请前往GitHub提交页面查看相关提交记录
+
+#### 20210802 - v0.3.1
+
+- `lxl.version`版本对象中的`build`项更名为`revision`
+
+#### 20210801 - v0.3.0
+
+- 将事件 `onContainerChangeSlot` 重命名为 `onContainerChange`，移动到方块事件中，并对回调参数做了修改。详见事件文档
+- 事件`onProjectileHit`重命名为`onProjectileHitBlock`，修改了回调参数，新增`onProjectileHitEntity`
+- 事件`onDestroyingBlock`修改为`onStartDestroyBlock`
+
+#### 20210730 - v 0.3.0
+
+- 两种表单构建器修改内容的接口返回值都修改为返回原对象，便于连锁操作
+- NBT对象通用接口`toJson`改名为`toString`，`toJson`移作他用
+
+#### 20210725 - v0.2.1 hotfix2
+
+- 增加`onPlayerDie`事件
+- 跨插件函数调用接口`lxl.import`发生较大变化
+
+#### 20210723 - v0.0.9
+
+- 将`mc.runcmdEx`返回值对象中的`res.result`字段更名为`res.success`
+
+#### 20210720 - v 0.0.9
+
+- 将`onJoin`事件重命名为`onPreJoin`，同时新增好用的真正的`onJoin`事件
 
 #### 20210719 - v 0.0.9
 

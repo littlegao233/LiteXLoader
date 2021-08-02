@@ -1,9 +1,9 @@
 #include <ScriptX/ScriptX.h>
 #include <API/APIHelp.h>
-#include <API/EngineGlobalData.h>
-#include <API/EngineOwnData.h>
-#include <API/LoaderHelper.h>
-#include <Kernel/Db.h>
+#include <Engine/GlobalShareData.h>
+#include <Engine/EngineOwnData.h>
+#include <Engine/LoaderHelper.h>
+#include <Kernel/Data.h>
 #include <list>
 #include <string>
 #include <vector>

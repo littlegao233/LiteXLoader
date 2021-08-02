@@ -10,6 +10,7 @@ std::string Raw_GetIP(Player* player);
 int Raw_GetPlayerPermLevel(Player* player);
 int Raw_GetGameMode(Player* player);
 bool Raw_GetSneaking(Player *player);
+int Raw_GetDirection(Player* player);
 
 bool Raw_RuncmdAs(Player *player, const std::string &cmd);
 bool Raw_TeleportPlayer(Player* player, const FloatVec4 &pos);
@@ -40,3 +41,6 @@ std::vector<Player*> Raw_GetOnlinePlayers();
 bool Raw_IsPlayerValid(Player *player);
 
 int Raw_GetPlayerDimId(Player* player);
+Player* Raw_GetPlayerByUniqueId(ActorUniqueID id);
+bool Raw_RefreshInventory(Player* pl);
+bool Raw_RemoveItem(Player* pl, int inventoryId, int count);

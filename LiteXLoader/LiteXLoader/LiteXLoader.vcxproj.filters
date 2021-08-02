@@ -14,9 +14,8 @@
     <Filter Include="Lib">
       <UniqueIdentifier>{3aacf150-55b2-4166-9782-9832fe58a15f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{4af0e4d7-d5c3-479b-8390-dd767fa049b6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,10 +31,7 @@
     <ClCompile Include="API\CommandAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
-    <ClCompile Include="API\DbAPI.cpp">
-      <Filter>API</Filter>
-    </ClCompile>
-    <ClCompile Include="API\EngineGlobalData.cpp">
+    <ClCompile Include="API\DataAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
     <ClCompile Include="API\EntityAPI.cpp">
@@ -53,9 +49,6 @@
     <ClCompile Include="API\ItemAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
-    <ClCompile Include="API\LoaderHelper.cpp">
-      <Filter>API</Filter>
-    </ClCompile>
     <ClCompile Include="API\LoggerAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
@@ -71,9 +64,6 @@
     <ClCompile Include="API\PlayerAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
-    <ClCompile Include="API\RemoteCall.cpp">
-      <Filter>API</Filter>
-    </ClCompile>
     <ClCompile Include="API\ServerAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
@@ -83,7 +73,7 @@
     <ClCompile Include="Kernel\Block.cpp">
       <Filter>Kernel</Filter>
     </ClCompile>
-    <ClCompile Include="Kernel\Db.cpp">
+    <ClCompile Include="Kernel\Data.cpp">
       <Filter>Kernel</Filter>
     </ClCompile>
     <ClCompile Include="Kernel\Entity.cpp">
@@ -137,6 +127,36 @@
     <ClCompile Include="API\ScriptAPI.cpp">
       <Filter>API</Filter>
     </ClCompile>
+    <ClCompile Include="Kernel\UnlockCmd.cpp">
+      <Filter>Kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="API\SystemAPI.cpp">
+      <Filter>API</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\GlobalShareData.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LoaderHelper.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\RemoteCall.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Kernel\Device.cpp">
+      <Filter>Kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LocalShareData.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="API\DeviceAPI.cpp">
+      <Filter>API</Filter>
+    </ClCompile>
+    <ClCompile Include="CheckUpdate.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="API\GameSystemAPI.cpp">
+      <Filter>API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="API\BaseAPI.h">
@@ -148,13 +168,7 @@
     <ClInclude Include="API\CommandAPI.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="API\DbAPI.h">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="API\EngineGlobalData.h">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="API\EngineOwnData.h">
+    <ClInclude Include="API\DataAPI.h">
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="API\EntityAPI.h">
@@ -170,9 +184,6 @@
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="API\ItemAPI.h">
-      <Filter>API</Filter>
-    </ClInclude>
-    <ClInclude Include="API\LoaderHelper.h">
       <Filter>API</Filter>
     </ClInclude>
     <ClInclude Include="API\LoggerAPI.h">
@@ -193,9 +204,6 @@
     <ClInclude Include="API\PlayerAPI.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="API\RemoteCall.h">
-      <Filter>API</Filter>
-    </ClInclude>
     <ClInclude Include="API\ServerAPI.h">
       <Filter>API</Filter>
     </ClInclude>
@@ -208,7 +216,7 @@
     <ClInclude Include="Kernel\Block.h">
       <Filter>Kernel</Filter>
     </ClInclude>
-    <ClInclude Include="Kernel\Db.h">
+    <ClInclude Include="Kernel\Data.h">
       <Filter>Kernel</Filter>
     </ClInclude>
     <ClInclude Include="Kernel\Entity.h">
@@ -257,6 +265,36 @@
       <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="API\ScriptAPI.h">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="API\SystemAPI.h">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\GlobalShareData.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\EngineOwnData.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LoaderHelper.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\RemoteCall.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Kernel\Device.h">
+      <Filter>Kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LocalShareData.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="API\DeviceAPI.h">
+      <Filter>API</Filter>
+    </ClInclude>
+    <ClInclude Include="CheckUpdate.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="API\GameSystemAPI.h">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

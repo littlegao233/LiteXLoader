@@ -2,14 +2,17 @@
 #include "BaseAPI.h"
 #include "EntityAPI.h"
 #include "PlayerAPI.h"
+#include "NbtAPI.h"
 #include <Kernel/Entity.h>
 using namespace script;
 
 //////////////////// Class Definition ////////////////////
 
 ClassDefine<EntityClass> EntityClassBuilder =
-    defineClass<EntityClass>("Entity")
+    defineClass<EntityClass>("LXL_Entity")
         .constructor(nullptr)
+        .instanceFunction("getRawPtr", &EntityClass::getRawPtr)
+
         .instanceProperty("name", &EntityClass::getName)
         .instanceProperty("type", &EntityClass::getType)
         .instanceProperty("id", &EntityClass::getId)
@@ -17,10 +20,15 @@ ClassDefine<EntityClass> EntityClassBuilder =
         .instanceProperty("maxHealth", &EntityClass::getMaxHealth)
         .instanceProperty("health", &EntityClass::getHealth)
         .instanceProperty("inAir", &EntityClass::getInAir)
+        .instanceProperty("speed",&EntityClass::getSpeed)
 
         .instanceFunction("teleport", &EntityClass::teleport)
         .instanceFunction("kill", &EntityClass::kill)
+        .instanceFunction("isPlayer", &EntityClass::isPlayer)
         .instanceFunction("toPlayer", &EntityClass::toPlayer)
+        .instanceFunction("setOnFire",&EntityClass::setOnFire)
+        .instanceFunction("setTag", &EntityClass::setTag)
+        .instanceFunction("getTag", &EntityClass::getTag)
         .build();
 
 
@@ -62,8 +70,19 @@ Actor* EntityClass::get()
     if (!isValid)
         return nullptr;
     else
-        return SymCall("?fetchEntity@Level@@UEBAPEAVActor@@UActorUniqueID@@_N@Z"
-        , Actor*, Level*, ActorUniqueID, bool)(mc->getLevel(), id, 0);
+        return Raw_GetEntityByUniqueId(id);
+}
+
+Local<Value> EntityClass::getRawPtr(const Arguments& args)
+{
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+        else
+            return Number::newNumber((intptr_t)entity);
+    }
+    CATCH("Fail in getRawPtr!")
 }
 
 Local<Value> EntityClass::getName()
@@ -150,9 +169,28 @@ Local<Value> EntityClass::getInAir()
     CATCH("Fail in getInAir!")
 }
 
+Local<Value> EntityClass::getSpeed()
+{
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+
+        return Number::newNumber(Raw_GetSpeed(entity));
+    }
+    CATCH("Fail in getSpeed!")
+}
+
 Local<Value> EntityClass::teleport(const Arguments& args)
 {
-    CHECK_ARGS_COUNT(args,1)
+    CHECK_ARGS_COUNT(args, 1);
+    if (args.size() == 4)
+    {
+        CHECK_ARG_TYPE(args[0], ValueKind::kNumber);
+        CHECK_ARG_TYPE(args[1], ValueKind::kNumber);
+        CHECK_ARG_TYPE(args[2], ValueKind::kNumber);
+        CHECK_ARG_TYPE(args[3], ValueKind::kNumber);
+    }
     
     try{
         FloatVec4 pos;
@@ -161,9 +199,15 @@ Local<Value> EntityClass::teleport(const Arguments& args)
         {
             // FloatPos
             FloatPos* posObj = FloatPos::extractPos(args[0]);
-            if (!posObj)
+            if (posObj)
+            {
+                pos = *posObj;
+            }
+            else
+            {
+                ERROR("Wrong type of argument in teleport!");
                 return Local<Value>();
-            pos = *posObj;
+            }
         }
         else if (args.size() == 4)
         {
@@ -180,7 +224,7 @@ Local<Value> EntityClass::teleport(const Arguments& args)
         }
         else
         {
-            ERROR("Wrong type of argument in teleport!");
+            ERROR("Wrong number of arguments in teleport!");
             return Local<Value>();
         }
         
@@ -204,6 +248,18 @@ Local<Value> EntityClass::kill(const Arguments& args)
     CATCH("Fail in killEntity!")
 }
 
+Local<Value> EntityClass::isPlayer(const Arguments& args)
+{
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+
+        return Boolean::newBoolean(Raw_IsPlayer(entity));
+    }
+    CATCH("Fail in isPlayer!")
+}
+
 Local<Value> EntityClass::toPlayer(const Arguments& args)
 {
     try {
@@ -218,4 +274,51 @@ Local<Value> EntityClass::toPlayer(const Arguments& args)
             return PlayerClass::newPlayer(pl);
     }
     CATCH("Fail in toPlayer!")
+}
+
+Local<Value> EntityClass::setOnFire(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+
+        int time = args[0].toInt();
+        bool result = Raw_SetOnFire(entity, time);
+        return Boolean::newBoolean(result);
+    }
+    CATCH("Fail in setOnFire!")
+}
+
+Local<Value> EntityClass::getTag(const Arguments& args)
+{
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+
+        return NbtCompound::newNBT(Tag::fromActor(entity));
+    }
+    CATCH("Fail in getTag!")
+}
+
+Local<Value> EntityClass::setTag(const Arguments& args)
+{
+    CHECK_ARGS_COUNT(args, 1);
+
+    try {
+        Actor* entity = get();
+        if (!entity)
+            return Local<Value>();
+
+        auto nbt = NbtCompound::extractNBT(args[0]);
+        if (!nbt)
+            return Local<Value>();    //Null
+
+        nbt->setActor(entity);
+        return Boolean::newBoolean(true);
+    }
+    CATCH("Fail in setTag!")
 }
