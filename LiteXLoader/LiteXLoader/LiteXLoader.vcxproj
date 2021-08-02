@@ -39,27 +39,33 @@
     <ClCompile Include="API\BaseAPI.cpp" />
     <ClCompile Include="API\BlockAPI.cpp" />
     <ClCompile Include="API\CommandAPI.cpp" />
-    <ClCompile Include="API\DbAPI.cpp" />
-    <ClCompile Include="API\EngineGlobalData.cpp" />
+    <ClCompile Include="API\DataAPI.cpp" />
+    <ClCompile Include="API\DeviceAPI.cpp" />
     <ClCompile Include="API\EntityAPI.cpp" />
     <ClCompile Include="API\EventAPI.cpp" />
     <ClCompile Include="API\FileSystemAPI.cpp" />
+    <ClCompile Include="API\GameSystemAPI.cpp" />
     <ClCompile Include="API\GuiAPI.cpp" />
     <ClCompile Include="API\ItemAPI.cpp" />
-    <ClCompile Include="API\LoaderHelper.cpp" />
     <ClCompile Include="API\LoggerAPI.cpp" />
     <ClCompile Include="API\LxlAPI.cpp" />
     <ClCompile Include="API\NbtAPI.cpp" />
     <ClCompile Include="API\NetworkAPI.cpp" />
     <ClCompile Include="API\PlayerAPI.cpp" />
-    <ClCompile Include="API\RemoteCall.cpp" />
     <ClCompile Include="API\ScriptAPI.cpp" />
     <ClCompile Include="API\ServerAPI.cpp" />
+    <ClCompile Include="API\SystemAPI.cpp" />
     <ClCompile Include="BindAPIs.cpp" />
+    <ClCompile Include="CheckUpdate.cpp" />
+    <ClCompile Include="Engine\LocalShareData.cpp" />
+    <ClCompile Include="Kernel\Device.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Engine\GlobalShareData.cpp" />
+    <ClCompile Include="Engine\LoaderHelper.cpp" />
+    <ClCompile Include="Engine\RemoteCall.cpp" />
     <ClCompile Include="Kernel\Base.cpp" />
     <ClCompile Include="Kernel\Block.cpp" />
-    <ClCompile Include="Kernel\Db.cpp" />
+    <ClCompile Include="Kernel\Data.cpp" />
     <ClCompile Include="Kernel\Entity.cpp" />
     <ClCompile Include="Kernel\Event.cpp" />
     <ClCompile Include="Kernel\Global.cpp" />
@@ -72,6 +78,7 @@
     <ClCompile Include="Kernel\Server.cpp" />
     <ClCompile Include="Kernel\SymbolHelper.cpp" />
     <ClCompile Include="Kernel\System.cpp" />
+    <ClCompile Include="Kernel\UnlockCmd.cpp" />
     <ClCompile Include="LiteXLoader.cpp" />
     <ClCompile Include="Loader.cpp" />
   </ItemGroup>
@@ -79,29 +86,35 @@
     <ClInclude Include="API\BaseAPI.h" />
     <ClInclude Include="API\BlockAPI.h" />
     <ClInclude Include="API\CommandAPI.h" />
-    <ClInclude Include="API\DbAPI.h" />
-    <ClInclude Include="API\EngineGlobalData.h" />
-    <ClInclude Include="API\EngineOwnData.h" />
+    <ClInclude Include="API\DataAPI.h" />
+    <ClInclude Include="API\DeviceAPI.h" />
     <ClInclude Include="API\EntityAPI.h" />
     <ClInclude Include="API\EventAPI.h" />
     <ClInclude Include="API\FileSystemAPI.h" />
+    <ClInclude Include="API\GameSystemAPI.h" />
     <ClInclude Include="API\GuiAPI.h" />
     <ClInclude Include="API\ItemAPI.h" />
-    <ClInclude Include="API\LoaderHelper.h" />
     <ClInclude Include="API\LoggerAPI.h" />
     <ClInclude Include="API\LxlAPI.h" />
     <ClInclude Include="API\NbtAPI.h" />
     <ClInclude Include="API\NetworkAPI.h" />
     <ClInclude Include="API\APIHelp.h" />
     <ClInclude Include="API\PlayerAPI.h" />
-    <ClInclude Include="API\RemoteCall.h" />
     <ClInclude Include="API\ScriptAPI.h" />
     <ClInclude Include="API\ServerAPI.h" />
     <ClInclude Include="API\StaticClasses.h" />
+    <ClInclude Include="API\SystemAPI.h" />
+    <ClInclude Include="CheckUpdate.h" />
     <ClInclude Include="Configs.h" />
+    <ClInclude Include="Engine\GlobalShareData.h" />
+    <ClInclude Include="Engine\EngineOwnData.h" />
+    <ClInclude Include="Engine\LoaderHelper.h" />
+    <ClInclude Include="Engine\LocalShareData.h" />
+    <ClInclude Include="Engine\RemoteCall.h" />
     <ClInclude Include="Kernel\Base.h" />
     <ClInclude Include="Kernel\Block.h" />
-    <ClInclude Include="Kernel\Db.h" />
+    <ClInclude Include="Kernel\Data.h" />
+    <ClInclude Include="Kernel\Device.h" />
     <ClInclude Include="Kernel\Entity.h" />
     <ClInclude Include="Kernel\Event.h" />
     <ClInclude Include="Kernel\Gui.h" />
@@ -371,6 +384,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -393,6 +408,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -7,7 +7,7 @@
 获取玩家对象有三种方式：
 
 1. 通过注册**事件监听**函数，获取到BDS给出的与相关事件有关的玩家对象  
-   详见[事件监听文档 - EventAPI](EventApi.md)
+   详见 [事件监听文档 - EventAPI](zh_CN/Development/EventAPI/Listen.md)
 
    
 
@@ -58,10 +58,13 @@
 | pl.health    | 玩家当前生命值              | `Integer`  |
 | pl.inAir     | 玩家当前是否悬空            | `Boolean`  |
 | pl.sneaking  | 玩家当前是否正在潜行        | `Boolean`  |
+| pl.speed     | 玩家当前速度                | `Float`    |
+| pl.direction | 玩家当前朝向（0 - 4）       | `Integer`  |
 
 这些对象属性都是只读的，无法被修改。其中：
 
 - **玩家游戏模式** 属性的取值为：`0` 代表生存模式，`1` 代表创造模式，`2` 代表极限模式，`3` 代表旁观者模式 
+- **玩家当前朝向** 属性记录了玩家当前面对的方向。`0`代表北方，`1`代表东方，`2`代表南方，`3`代表西方，
 - **玩家真实名字** 属性储存的字符串可以被认为是可靠的，他们不会被改名而变动  
 - **玩家设备IP地址** 属性储存了玩家的设备IP以及端口号，格式类似`12.34.567.89:1111`  
 - **操作权限等级** 属性的对照表如下：
@@ -195,11 +198,12 @@ var open = pl.runcmd("tp ~ ~+50 ~");
 
 #### 传送玩家至指定位置  
 
-`pl.teleport(pos)`
+`pl.teleport(pos)`  
+`pl.teleport(x,y,z,dimid)`
 
 - 参数：
   - pos : `FloatPos`  
-    目标位置坐标 
+    目标位置坐标 （或者使用x, y, z, dimid来确定玩家位置）
 - 返回值：是否成功传送
 - 返回值类型：`Boolean`
 
@@ -225,6 +229,18 @@ pl.kill();
 [Lua]
 
 ```
+
+#### 使指定玩家着火
+
+`pl.setOnFire(time)`
+
+- 参数：
+  - time : `Number`  
+    着火时长，单位秒
+- 返回值：是否成功着火
+- 返回值类型：`Boolean`
+
+<br>
 
 #### 重命名玩家  
 
@@ -371,86 +387,28 @@ pl:crash()
 
 ```
 
-#### 获取玩家计分板值  
+#### 获取玩家对应的设备信息对象
 
-`pl.getScore(name)`
+`pl.getDevice()`
 
-- 参数：
-  - name : `String`  
-    计分板名称  
-- 返回值：计分板上的数值
-- 返回值类型：`Integer`
+- 返回值：玩家对应的设备信息对象
+- 返回值类型：`Device`
 
-```clike
-[Js]
-//对于一个玩家对象pl
-log("You have money:",pl.getScore("money"));
-[Lua]
+设备信息对象储存了与玩家设备有关的某些信息，如设备类型、网络延迟等信息。  
+关于设备信息对象的其他信息请参考 [设备信息对象 API](zh_CN/Development/GameAPI/Device.md)
 
-```
+<br>
 
-#### 设置玩家计分板值  
+#### 获取玩家对应的NBT对象
 
-`pl.setScore(name,value)`
+`pl.getTag()`
 
-- 参数：
-  - name : `String`  
-    计分板名称  
+- 返回值：玩家的NBT对象
+- 返回值类型：`NbtCompound`
 
-  - value : `Integer`  
-    设置的数值  
-- 返回值：是否设置成功
-- 返回值类型：`Boolean`
+关于NBT对象的更多使用，请参考 [NBT接口文档](zh_CN/Development/NbtAPI/NBT.md)
 
-如果你想删除这个计分板项，请在value参数传入`Null`
-
-```clike
-[Js]
-//对于一个玩家对象pl
-pl.setScore("money",10000);
-[Lua]
-
-```
-
-#### 给玩家计分板项加分 
-
-`pl.addScore(name,value)`
-
-- 参数：
-  - name : `String`  
-    计分板名称  
-
-  - value : `Integer`  
-    要增加的数值  
-- 返回值：是否设置成功
-- 返回值类型：`Boolean`
-
-```clike
-[Js]
-//对于一个玩家对象pl
-pl.addScore(100);
-[Lua]
-
-```
-
-#### 移除玩家计分板项
-
-`pl.removeScore(name)`
-
-- 参数：
-  - name : `String`  
-    计分板名称  
-
-- 返回值：是否移除成功
-- 返回值类型：`Boolean`
-
-```clike
-[Js]
-//对于一个玩家对象pl
-pl.removeScore("what");
-[Lua]
-
-```
+<br>
 
 #### 设置玩家自定义侧边栏
 
@@ -527,3 +485,16 @@ pl.removeBossBar();
 [Lua]
 
 ```
+
+#### 删除玩家背包中的物品  
+
+`pl.removeItem(inventoryId,count)`
+
+- 参数：
+  - inventoryId : `Integer`  
+    背包格位ID  
+
+  - count : `Integer`  
+    要删除的物品数量
+- 返回值：是否成功删除
+- 返回值类型：`Boolean`

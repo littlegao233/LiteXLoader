@@ -23,6 +23,7 @@ public:
     static Local<Object> newPlayer(Player *p);
     static Local<Object> newPlayer(WPlayer p);
     static Player* extractPlayer(Local<Value> v);
+    Local<Value> getRawPtr(const Arguments& args);
 
     Local<Value> getName();
     Local<Value> getPos();
@@ -36,6 +37,8 @@ public:
     Local<Value> getHealth();
     Local<Value> getInAir();
     Local<Value> getSneaking();
+    Local<Value> getSpeed();
+    Local<Value> getDirection();
 
     Local<Value> isOP(const Arguments& args);
     Local<Value> setPermLevel(const Arguments& args);
@@ -52,6 +55,9 @@ public:
     Local<Value> addLevel(const Arguments& args);
     Local<Value> transServer(const Arguments& args);
     Local<Value> crash(const Arguments& args);
+    Local<Value> setOnFire(const Arguments& args);
+    Local<Value> getDevice(const Arguments& args);
+    Local<Value> removeItem(const Arguments& args);
 
     Local<Value> getScore(const Arguments& args);
     Local<Value> setScore(const Arguments& args);
@@ -70,6 +76,9 @@ public:
     Local<Value> setExtraData(const Arguments& args);
     Local<Value> getExtraData(const Arguments& args);
     Local<Value> delExtraData(const Arguments& args);
+
+    Local<Value> getTag(const Arguments& args);
+    Local<Value> setTag(const Arguments& args);
 };
 
 //////////////////// APIs ////////////////////

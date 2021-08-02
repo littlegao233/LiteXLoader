@@ -3,7 +3,7 @@
 #include "PlayerAPI.h"
 #include <Kernel/System.h>
 #include <Kernel/Player.h>
-#include "EngineOwnData.h"
+#include <Engine/EngineOwnData.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -229,6 +229,8 @@ Local<Value> LoggerSetFile(const Arguments& args)
 
     try {
         string newFile = args[0].asString().toString();
+        Raw_AutoCreateDirs(newFile);
+
         ofstream *fout = &(ENGINE_OWN_DATA()->fout);
         if(fout->is_open())
             fout->close();

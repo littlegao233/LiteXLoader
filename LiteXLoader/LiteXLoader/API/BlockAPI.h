@@ -35,11 +35,16 @@ public:
     static Local<Object> newBlock(Block *p, BlockPos *pos, BlockSource *bs);
     static Local<Object> newBlock(WBlock p);
     static Block* extractBlock(Local<Value> v);
+    Local<Value> getRawPtr(const Arguments& args);
 
     Local<Value> getName();
     Local<Value> getType();
     Local<Value> getId();
     Local<Value> getPos();
+
+    Local<Value> getTag(const Arguments& args);
+    Local<Value> setTag(const Arguments& args);
+    Local<Value> getBlockState(const Arguments& args);
 };
 
 //////////////////// APIs ////////////////////

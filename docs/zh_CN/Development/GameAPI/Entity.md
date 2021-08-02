@@ -5,7 +5,7 @@
 ### 获取一个实体对象
 
 1. 通过注册**事件监听**函数，或者调用某些**返回实体对象**的函数，来获取到BDS给出的实体对象    
-   详见[事件监听文档 - EventAPI](EventApi.md)      
+   详见 [事件监听文档 - EventAPI](zh_CN/Development/EventAPI/Listen.md)      
 
    
 
@@ -28,6 +28,7 @@
 | en.maxHealth | 实体最大生命值   | `Integer`  |
 | en.health    | 实体当前生命值   | `Integer`  |
 | en.inAir     | 实体当前是否悬空 | `Boolean`  |
+| en.speed     | 实体当前速度     | `Float`    |
 
 这些对象属性都是只读的，无法被修改
 
@@ -39,11 +40,12 @@
 
 #### 传送实体至指定位置
 
-`en.teleport(pos)`
+`en.teleport(pos)`  
+`en.teleport(x,y,z,dimid)`
 
 - 参数：
   - pos : `FloatPos`  
-    目标位置坐标
+    目标位置坐标（或者使用x, y, z, dimid来确定实体位置）
 - 返回值：是否成功传送
 - 返回值类型：`Boolean`
 
@@ -58,6 +60,26 @@
 
 <br>
 
+#### 获取实体对应的NBT对象
+
+`en.getTag()`
+
+- 返回值：实体的NBT对象
+- 返回值类型：`NbtCompound`
+
+关于NBT对象的更多使用，请参考 [NBT接口文档](zh_CN/Development/NbtAPI/NBT.md)
+
+<br>
+
+#### 判断一个实体对象是不是玩家
+
+`en.isPlayer()`
+
+- 返回值：当前实体对象是不是玩家
+- 返回值类型：`Boolean`
+
+<br>
+
 #### 将实体对象转换玩家对象
 
 `en.toPlayer()`
@@ -67,5 +89,17 @@
   - 如果此实体对象指向的不是某个玩家，或者转换失败，则返回 `Null`
 
 如果当前实体对象指向的是一个玩家，可以使用此函数将实体对象转换为玩家对象，以使用更多的玩家相关 API
+
+<br>
+
+#### 使指定实体着火
+
+`en.setOnFire(time)`
+
+- 参数：
+  - time : `Number`  
+    着火时长，单位秒
+- 返回值：是否成功着火
+- 返回值类型：`Boolean`
 
 <br>

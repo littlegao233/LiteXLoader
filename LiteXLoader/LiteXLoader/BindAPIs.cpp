@@ -3,11 +3,12 @@ using namespace script;
 #include <API/BaseAPI.h>
 #include <API/BlockAPI.h>
 #include <API/CommandAPI.h>
+#include <API/DeviceAPI.h>
 #include <API/ItemAPI.h>
 #include <API/EntityAPI.h>
 #include <API/NbtAPI.h>
 #include <API/GuiAPI.h>
-#include <API/DbAPI.h>
+#include <API/DataAPI.h>
 #include <API/LoggerAPI.h>
 #include <API/FileSystemAPI.h>
 #include <API/NetworkAPI.h>
@@ -22,10 +23,6 @@ void BindAPIs(ScriptEngine *engine)
     //////////////// 全局函数 ////////////////
 
 	engine->set("log", Function::newFunction(Log));
-
-#if defined(SCRIPTX_LANG_LUA)
-    engine->set("print", Function::newFunction(Log));
-#endif
 
     engine->set("setTimeout",Function::newFunction(SetTimeout));
     engine->set("setInterval",Function::newFunction(SetInterval));
@@ -51,6 +48,7 @@ void BindAPIs(ScriptEngine *engine)
     engine->registerNativeClass(MoneyClassBuilder);
     engine->registerNativeClass(NetworkClassBuilder);
     engine->registerNativeClass(LxlClassBuilder);
+    engine->registerNativeClass(NbtStaticBuilder);
 
 
     //////////////// 实例类 ////////////////
@@ -67,6 +65,9 @@ void BindAPIs(ScriptEngine *engine)
     extern ClassDefine<ConfIniClass> ConfIniClassBuilder;
     engine->registerNativeClass<ConfIniClass>(ConfIniClassBuilder);
 
+    extern ClassDefine<DeviceClass> DeviceClassBuilder;
+    engine->registerNativeClass<DeviceClass>(DeviceClassBuilder);
+
     extern ClassDefine<EntityClass> EntityClassBuilder;
     engine->registerNativeClass<EntityClass>(EntityClassBuilder);
 
@@ -82,6 +83,12 @@ void BindAPIs(ScriptEngine *engine)
     extern ClassDefine<PlayerClass> PlayerClassBuilder;
     engine->registerNativeClass<PlayerClass>(PlayerClassBuilder);
 
-    extern ClassDefine<NBTClass> NBTClassBuilder;
-    engine->registerNativeClass<NBTClass>(NBTClassBuilder);
+    extern ClassDefine<NbtValue> NbtValueBuilder;
+    engine->registerNativeClass<NbtValue>(NbtValueBuilder);
+
+    extern ClassDefine<NbtList> NbtListBuilder;
+    engine->registerNativeClass<NbtList>(NbtListBuilder);
+
+    extern ClassDefine<NbtCompound> NbtCompoundBuilder;
+    engine->registerNativeClass<NbtCompound>(NbtCompoundBuilder);
 }
